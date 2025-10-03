@@ -25,11 +25,11 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] pointer-events-auto",
         row: "flex w-full mt-2 pointer-events-auto",
         cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 pointer-events-auto [&:has(.day_today)]:before:content-['Today'] [&:has(.day_today)]:before:absolute [&:has(.day_today)]:before:-top-3 [&:has(.day_today)]:before:left-1/2 [&:has(.day_today)]:before:-translate-x-1/2 [&:has(.day_today)]:before:text-[9px] [&:has(.day_today)]:before:text-primary [&:has(.day_today)]:before:font-medium [&:has(.day_today)]:before:whitespace-nowrap",
-        day: cn(buttonVariants({ variant: "ghost" }), "h-9 w-9 p-0 font-normal aria-selected:opacity-100 pointer-events-auto cursor-pointer"),
+        day: cn(buttonVariants({ variant: "ghost" }), "h-9 w-9 p-0 font-bold text-foreground aria-selected:opacity-100 pointer-events-auto cursor-pointer hover:bg-accent hover:text-accent-foreground"),
         day_range_end: "day-range-end",
         day_selected:
-          "bg-accent text-accent-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground pointer-events-auto",
-        day_today: "bg-accent/10 text-accent-foreground font-bold hover:bg-accent/20 pointer-events-auto day_today",
+          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground pointer-events-auto font-bold",
+        day_today: "bg-primary/10 text-foreground font-bold hover:bg-primary/20 border-2 border-primary pointer-events-auto day_today",
         day_outside:
           "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30 pointer-events-auto",
         day_disabled: "text-muted-foreground opacity-50",
