@@ -227,14 +227,13 @@ const UnitDetail = () => {
                             {checkInDate ? format(checkInDate, "PPP") : <span>Select date</span>}
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
+                        <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
                           <Calendar
                             mode="single"
                             selected={checkInDate}
                             onSelect={setCheckInDate}
                             disabled={(date) => date < new Date()}
                             initialFocus
-                            className={cn("p-3 pointer-events-auto")}
                           />
                         </PopoverContent>
                       </Popover>
@@ -256,14 +255,13 @@ const UnitDetail = () => {
                             {checkOutDate ? format(checkOutDate, "PPP") : <span>Select date</span>}
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
+                        <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
                           <Calendar
                             mode="single"
                             selected={checkOutDate}
                             onSelect={setCheckOutDate}
                             disabled={(date) => date < (checkInDate || new Date())}
                             initialFocus
-                            className={cn("p-3 pointer-events-auto")}
                           />
                         </PopoverContent>
                       </Popover>
