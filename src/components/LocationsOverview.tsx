@@ -2,11 +2,14 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 type Location = {
   id: string;
   name: string;
   description: string | null;
+  slug: string | null;
 };
 
 const LocationsOverview = () => {
@@ -21,7 +24,7 @@ const LocationsOverview = () => {
     try {
       const { data, error } = await supabase
         .from("locations")
-        .select("id, name, description")
+        .select("id, name, description, slug")
         .order("name");
 
       if (error) throw error;
@@ -70,7 +73,10 @@ const LocationsOverview = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">{location.description}</p>
+                <p className="text-muted-foreground mb-4">{location.description}</p>
+                <Button asChild className="w-full bg-primary hover:bg-primary/90">
+                  <Link to={`/locations/${location.slug || location.id}`}>View Available Units</Link>
+                </Button>
               </CardContent>
             </Card>
           ))}
