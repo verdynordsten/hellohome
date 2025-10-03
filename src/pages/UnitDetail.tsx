@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ const UnitDetail = () => {
   const [checkOutDate, setCheckOutDate] = useState<Date>();
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Sample images for the unit
   const unitImages = [
@@ -34,6 +35,27 @@ const UnitDetail = () => {
     "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&q=80",
     "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80",
   ];
+
+  // Autoplay functionality
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setSelectedImage((prev) => (prev + 1) % unitImages.length);
+        setIsTransitioning(false);
+      }, 300);
+    }, 4000); // Change image every 4 seconds
+
+    return () => clearInterval(interval);
+  }, [unitImages.length]);
+
+  const handleImageSelect = (index: number) => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setSelectedImage(index);
+      setIsTransitioning(false);
+    }, 300);
+  };
   
   // Form state
   const [guestName, setGuestName] = useState("");
@@ -78,14 +100,29 @@ const UnitDetail = () => {
           <div className="space-y-4 mb-8">
             {/* Main Image */}
             <div className="relative h-[400px] rounded-xl overflow-hidden group">
-              <img
-                src={unitImages[selectedImage]}
-                alt={`Apartment view ${selectedImage + 1}`}
-                className="w-full h-full object-cover transition-transform duration-300"
-              />
-              <Badge className="absolute top-4 left-4 bg-primary">
+              <div className="relative w-full h-full">
+                {unitImages.map((image, index) => (
+                  <img
+                    key={index}
+                    src={image}
+                    alt={`Apartment view ${index + 1}`}
+                    className={cn(
+                      "absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-in-out",
+                      selectedImage === index
+                        ? "opacity-100 scale-100"
+                        : "opacity-0 scale-105"
+                    )}
+                  />
+                ))}
+              </div>
+              <Badge className="absolute top-4 left-4 bg-primary z-10">
                 Standard Studio
               </Badge>
+              
+              {/* Image counter */}
+              <div className="absolute bottom-4 right-4 bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full text-sm z-10">
+                {selectedImage + 1} / {unitImages.length}
+              </div>
             </div>
 
             {/* Thumbnails */}
@@ -93,12 +130,12 @@ const UnitDetail = () => {
               {unitImages.map((image, index) => (
                 <button
                   key={index}
-                  onClick={() => setSelectedImage(index)}
+                  onClick={() => handleImageSelect(index)}
                   className={cn(
-                    "relative aspect-video rounded-lg overflow-hidden transition-all duration-200",
+                    "relative aspect-video rounded-lg overflow-hidden transition-all duration-300 hover-scale",
                     selectedImage === index
-                      ? "ring-2 ring-primary scale-105"
-                      : "opacity-70 hover:opacity-100 hover:scale-105"
+                      ? "ring-2 ring-primary scale-105 shadow-lg"
+                      : "opacity-70 hover:opacity-100"
                   )}
                 >
                   <img
@@ -106,6 +143,9 @@ const UnitDetail = () => {
                     alt={`Thumbnail ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
+                  {selectedImage === index && (
+                    <div className="absolute inset-0 bg-primary/20" />
+                  )}
                 </button>
               ))}
             </div>
