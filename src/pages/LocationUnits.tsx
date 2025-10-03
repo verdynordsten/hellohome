@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Wifi, Tv, Wind, Car, CheckCircle, Building2 } from "lucide-react";
+import { MapPin, Building2 } from "lucide-react";
 
 type Location = {
   id: string;
@@ -32,17 +32,6 @@ type Unit = {
   slug: string | null;
 };
 
-const featureIcons: Record<string, any> = {
-  "WiFi": Wifi,
-  "Smart TV": Tv,
-  "Cable TV": Tv,
-  "Air Conditioning": Wind,
-  "Parking": Car,
-  "Free Parking": Car,
-  "Gym Access": Building2,
-  "Pool Access": Building2,
-  "24/7 Security": CheckCircle,
-};
 const LocationUnits = () => {
   const { locationId: locationSlug } = useParams();
   const [location, setLocation] = useState<Location | null>(null);
@@ -181,15 +170,11 @@ const LocationUnits = () => {
 
                 <CardContent>
                   <div className="flex flex-wrap gap-2 mb-3">
-                    {unit.features?.slice(0, 4).map((feature, idx) => {
-                      const Icon = featureIcons[feature];
-                      return (
-                        <div key={idx} className="flex items-center gap-1 text-xs text-muted-foreground" title={feature}>
-                          {Icon && <Icon className="h-4 w-4 text-primary" />}
-                          <span>{feature}</span>
-                        </div>
-                      );
-                    })}
+                    {unit.features?.slice(0, 4).map((feature, idx) => (
+                      <Badge key={idx} variant="secondary" className="rounded-full">
+                        {feature}
+                      </Badge>
+                    ))}
                   </div>
                   {unit.price_per_night && (
                     <p className="text-lg font-bold text-primary">

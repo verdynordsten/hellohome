@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Building2, MapPin, Wifi, Tv, Wind, Car, CheckCircle, CalendarIcon } from "lucide-react";
+import { Building2, MapPin, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 type Unit = {
   id: string;
   location_id: string;
+  name: string | null;
   unit_name: string | null;
   type: string;
   floor: string | null;
@@ -205,7 +206,7 @@ const UnitDetail = () => {
                   <img
                     key={index}
                     src={image}
-                    alt={`${unit.unit_name || unit.type} view ${index + 1}`}
+                    alt={`${unit.name || unit.unit_name || unit.type} view ${index + 1}`}
                     className={cn(
                       "absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-in-out",
                       selectedImage === index
@@ -265,7 +266,7 @@ const UnitDetail = () => {
                   {unit.floor && <Badge variant="outline">Floor {unit.floor}</Badge>}
                   {unit.view && <Badge variant="outline">{unit.view}</Badge>}
                 </div>
-                <h1 className="text-3xl font-bold mb-2">{unit.unit_name || `${unit.type} Unit`}</h1>
+                <h1 className="text-3xl font-bold mb-2">{unit.name || unit.unit_name || `${unit.type} Unit`}</h1>
                 <p className="text-muted-foreground flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
                   {location?.name}
@@ -284,29 +285,12 @@ const UnitDetail = () => {
               {unit.features && unit.features.length > 0 && (
                 <div>
                   <h2 className="text-2xl font-semibold mb-4">Facilities</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {unit.features.map((feature, idx) => {
-                      const iconMap: Record<string, any> = {
-                        "WiFi": Wifi,
-                        "Smart TV": Tv,
-                        "Cable TV": Tv,
-                        "Air Conditioning": Wind,
-                        "Parking": Car,
-                        "Free Parking": Car,
-                        "Gym Access": Building2,
-                        "Pool Access": Building2,
-                        "Swimming Pool": Building2,
-                        "24/7 Security": CheckCircle,
-                      };
-                      const Icon = iconMap[feature] || CheckCircle;
-                      
-                      return (
-                        <div key={idx} className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                          <Icon className="h-5 w-5 text-primary" />
-                          <span className="text-sm">{feature}</span>
-                        </div>
-                      );
-                    })}
+                  <div className="flex flex-wrap gap-2">
+                    {unit.features.map((feature, idx) => (
+                      <Badge key={idx} variant="secondary" className="rounded-full px-4 py-2">
+                        {feature}
+                      </Badge>
+                    ))}
                   </div>
                 </div>
               )}
@@ -521,7 +505,7 @@ const UnitDetail = () => {
                 <div className="space-y-2">
                   <Label>Booked Unit</Label>
                   <Input
-                    value={`${location?.name || "Unknown"} - ${unit.unit_name || unit.type}`}
+                    value={`${location?.name || "Unknown"} - ${unit.name || unit.unit_name || unit.type}`}
                     disabled
                     className="bg-muted"
                   />
