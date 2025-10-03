@@ -238,7 +238,7 @@ const LocationUnits = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <section className="py-12 bg-muted/30 border-b">
+      <section className="pt-32 pb-12 bg-muted/30 border-b">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-start">
             <div>
