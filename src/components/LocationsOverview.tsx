@@ -1,26 +1,48 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
 
-const locations = [
-  {
-    title: "Senayan City Apartment",
-    description: "Premium apartment in the heart of Jakarta city with direct access to Senayan City Mall. Features infinity pool and modern gym center.",
-  },
-  {
-    title: "Sudirman Plaza Apartment",
-    description: "Hotel apartment jakarta in Sudirman area with stunning city views. Close to business center and entertainment district.",
-  },
-  {
-    title: "Kuningan Residence Apartment",
-    description: "Luxury apartment jakarta rental with complete facilities in strategic Kuningan area. Easy access to business district and shopping centers.",
-  },
-  {
-    title: "House Rental Jakarta",
-    description: "Daily house rental jakarta with 4 bedrooms for large groups. Complete with kitchen, living room, and free parking - perfect for families or groups.",
-  },
-];
+type Location = {
+  id: string;
+  name: string;
+  description: string | null;
+};
 
 const LocationsOverview = () => {
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchLocations();
+  }, []);
+
+  const fetchLocations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("locations")
+        .select("id, name, description")
+        .order("name");
+
+      if (error) throw error;
+      setLocations(data || []);
+    } catch (error) {
+      console.error("Error fetching locations:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <section className="py-16 bg-muted/30">
+        <div className="container mx-auto px-4 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-16 bg-muted/30">
       <div className="container mx-auto px-4">
@@ -39,12 +61,12 @@ const LocationsOverview = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
-          {locations.map((location, idx) => (
-            <Card key={idx} className="hover:shadow-card-hover transition-all duration-300">
+          {locations.map((location) => (
+            <Card key={location.id} className="hover:shadow-card-hover transition-all duration-300">
               <CardHeader>
                 <CardTitle className="flex items-start gap-2 text-lg">
                   <MapPin className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                  <span>{location.title}</span>
+                  <span>{location.name}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>

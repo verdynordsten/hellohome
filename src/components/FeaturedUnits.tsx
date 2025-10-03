@@ -1,43 +1,55 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Layers } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const units = [
-  {
-    id: "ph-a1-2918",
-    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80",
-    type: "Studio",
-    floor: 29,
-    unit: "Unit A1-2918",
-    building: "Meisterstadt Pollux Habibie",
-    tower: "Tower A1",
-    features: ["Japanese Design", "City View"],
-  },
-  {
-    id: "cp-3702a",
-    image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80",
-    type: "Studio",
-    floor: 37,
-    unit: "Unit 3702A",
-    building: "Citra Plaza Nagoya",
-    tower: "",
-    features: ["Sea View", "Modern Design", "Prime Location"],
-  },
-  {
-    id: "ph-a1-5310",
-    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&q=80",
-    type: "Studio",
-    floor: 53,
-    unit: "Unit A1-5310",
-    building: "Meisterstadt Pollux Habibie",
-    tower: "Tower A1",
-    features: ["Sea View", "High Floor"],
-  },
-];
+type Unit = {
+  id: string;
+  unit_name: string | null;
+  type: string;
+  floor: string | null;
+  image_url: string | null;
+  features: string[] | null;
+};
 
 const FeaturedUnits = () => {
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchFeaturedUnits();
+  }, []);
+
+  const fetchFeaturedUnits = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("units")
+        .select("id, unit_name, type, floor, image_url, features")
+        .eq("available", true)
+        .limit(3);
+
+      if (error) throw error;
+      setUnits(data || []);
+    } catch (error) {
+      console.error("Error fetching featured units:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <section className="py-16 bg-muted/30">
+        <div className="container mx-auto px-4 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-16 bg-muted/30">
       <div className="container mx-auto px-4">
@@ -53,8 +65,8 @@ const FeaturedUnits = () => {
             <Card key={unit.id} className="overflow-hidden hover:shadow-card-hover transition-all duration-300 group">
               <div className="relative overflow-hidden">
                 <img
-                  src={unit.image}
-                  alt={unit.unit}
+                  src={unit.image_url || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800"}
+                  alt={unit.unit_name || unit.type}
                   className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
                 />
                 <div className="absolute top-4 left-4 flex gap-2">
@@ -62,24 +74,22 @@ const FeaturedUnits = () => {
                     <Building2 className="h-3 w-3 mr-1" />
                     {unit.type}
                   </Badge>
-                  <Badge variant="secondary" className="bg-accent/90 text-accent-foreground">
-                    <Layers className="h-3 w-3 mr-1" />
-                    Floor {unit.floor}
-                  </Badge>
+                  {unit.floor && (
+                    <Badge variant="secondary" className="bg-accent/90 text-accent-foreground">
+                      <Layers className="h-3 w-3 mr-1" />
+                      Floor {unit.floor}
+                    </Badge>
+                  )}
                 </div>
               </div>
 
               <CardHeader>
-                <h3 className="text-xl font-bold">{unit.unit}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {unit.building}
-                  {unit.tower && ` • ${unit.tower}`}
-                </p>
+                <h3 className="text-xl font-bold">{unit.unit_name || `${unit.type} Unit`}</h3>
               </CardHeader>
 
               <CardContent>
                 <div className="flex flex-wrap gap-2">
-                  {unit.features.map((feature, idx) => (
+                  {unit.features?.slice(0, 3).map((feature, idx) => (
                     <Badge key={idx} variant="outline">
                       {feature}
                     </Badge>

@@ -1,41 +1,51 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const locations = [
-  {
-    id: "senayan-city",
-    name: "Senayan City",
-    description: "Premium apartments in the heart of Jakarta with infinity pool and modern gym",
-    units: 12,
-    image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80",
-  },
-  {
-    id: "sudirman-plaza",
-    name: "Sudirman Plaza",
-    description: "Hotel-standard apartments with stunning city views in prime Sudirman area",
-    units: 13,
-    image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80",
-  },
-  {
-    id: "kuningan-residence",
-    name: "Kuningan Residence",
-    description: "Luxury apartments with complete facilities and easy access to business district",
-    units: 10,
-    image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80",
-  },
-  {
-    id: "house-rental",
-    name: "House Rental Jakarta",
-    description: "Spacious house rentals perfect for families and large groups",
-    units: 5,
-    image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&q=80",
-  },
-];
+type Location = {
+  id: string;
+  name: string;
+  description: string | null;
+  units_count: number;
+  image_url: string | null;
+};
 
 const Locations = () => {
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchLocations();
+  }, []);
+
+  const fetchLocations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("locations")
+        .select("*")
+        .order("name");
+
+      if (error) throw error;
+      setLocations(data || []);
+    } catch (error) {
+      console.error("Error fetching locations:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -54,7 +64,7 @@ const Locations = () => {
                 <Card className="overflow-hidden hover:shadow-card-hover transition-all group cursor-pointer">
                   <div className="relative overflow-hidden h-64">
                     <img
-                      src={location.image}
+                      src={location.image_url || "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800"}
                       alt={location.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                     />
@@ -67,7 +77,7 @@ const Locations = () => {
                     <CardDescription className="text-base">{location.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-accent font-medium">{location.units} available units</p>
+                    <p className="text-sm text-accent font-medium">{location.units_count} available units</p>
                   </CardContent>
                 </Card>
               </Link>

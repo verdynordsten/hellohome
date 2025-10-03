@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import type { DateRange } from "react-day-picker";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,24 +18,82 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
+type Unit = {
+  id: string;
+  location_id: string;
+  unit_name: string | null;
+  type: string;
+  floor: string | null;
+  building: string | null;
+  tower: string | null;
+  view: string | null;
+  features: string[] | null;
+  images: string[] | null;
+  image_url: string | null;
+  price_per_night: number | null;
+  price_per_month: number | null;
+  description: string | null;
+  available: boolean | null;
+};
+
+type Location = {
+  id: string;
+  name: string;
+};
+
 const UnitDetail = () => {
   const { id } = useParams();
   const { toast } = useToast();
+  const [unit, setUnit] = useState<Unit | null>(null);
+  const [location, setLocation] = useState<Location | null>(null);
+  const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // Sample images for the unit
-  const unitImages = [
-    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1502672023488-70e25813eb80?auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80",
-  ];
+  useEffect(() => {
+    if (id) {
+      fetchUnitDetails();
+    }
+  }, [id]);
+
+  const fetchUnitDetails = async () => {
+    try {
+      const { data: unitData, error: unitError } = await supabase
+        .from("units")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (unitError) throw unitError;
+      setUnit(unitData);
+
+      // Fetch location details
+      if (unitData.location_id) {
+        const { data: locationData, error: locationError } = await supabase
+          .from("locations")
+          .select("id, name")
+          .eq("id", unitData.location_id)
+          .single();
+
+        if (locationError) throw locationError;
+        setLocation(locationData);
+      }
+    } catch (error) {
+      console.error("Error fetching unit:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const unitImages = unit?.images && unit.images.length > 0 
+    ? unit.images 
+    : [
+        unit?.image_url || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
+        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
+        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800",
+      ];
 
   // Autoplay functionality
   useEffect(() => {
@@ -85,11 +144,34 @@ const UnitDetail = () => {
       return;
     }
 
-    const message = `*Reservation Form*%0A%0A*Guest Information*%0AName: ${guestName}%0AEmail: ${email}%0APhone: ${phone}%0ANumber of Guests: ${guests}%0A%0A*Booking Details*%0AUnit: ${id}%0ACheck-in: ${format(dateRange.from, "dd MMMM yyyy")} at ${checkInTime}%0ACheck-out: ${format(dateRange.to, "dd MMMM yyyy")}%0A%0A*Special Requests*%0A${specialRequests || "None"}`;
+    const unitName = unit?.unit_name || unit?.type || id;
+    const locationName = location?.name || "Unknown Location";
+    const message = `*Reservation Form*%0A%0A*Guest Information*%0AName: ${guestName}%0AEmail: ${email}%0APhone: ${phone}%0ANumber of Guests: ${guests}%0A%0A*Booking Details*%0ALocation: ${locationName}%0AUnit: ${unitName}%0ACheck-in: ${format(dateRange.from, "dd MMMM yyyy")} at ${checkInTime}%0ACheck-out: ${format(dateRange.to, "dd MMMM yyyy")}%0A%0A*Special Requests*%0A${specialRequests || "None"}`;
     
     window.open(`https://wa.me/628116918078?text=${message}`, "_blank");
     setShowBookingForm(false);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!unit) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 pt-24 pb-16 text-center">
+          <h1 className="text-4xl font-bold mb-4">Unit Not Found</h1>
+          <p className="text-muted-foreground mb-8">The unit you're looking for doesn't exist.</p>
+          <Link to="/locations" className="text-primary hover:underline">← Back to Locations</Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -105,7 +187,7 @@ const UnitDetail = () => {
                   <img
                     key={index}
                     src={image}
-                    alt={`Apartment view ${index + 1}`}
+                    alt={`${unit.unit_name || unit.type} view ${index + 1}`}
                     className={cn(
                       "absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-in-out",
                       selectedImage === index
@@ -116,8 +198,13 @@ const UnitDetail = () => {
                 ))}
               </div>
               <Badge className="absolute top-4 left-4 bg-primary z-10">
-                Standard Studio
+                {unit.type}
               </Badge>
+              {!unit.available && (
+                <Badge className="absolute top-4 right-20 bg-destructive z-10">
+                  Rented
+                </Badge>
+              )}
               
               {/* Image counter */}
               <div className="absolute bottom-4 right-4 bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full text-sm z-10">
@@ -156,43 +243,55 @@ const UnitDetail = () => {
             <div className="lg:col-span-2 space-y-8">
               <div>
                 <div className="flex items-center gap-2 mb-4">
-                  <Badge className="bg-primary">Studio</Badge>
-                  <Badge variant="outline">Floor 29</Badge>
+                  <Badge className="bg-primary">{unit.type}</Badge>
+                  {unit.floor && <Badge variant="outline">Floor {unit.floor}</Badge>}
+                  {unit.view && <Badge variant="outline">{unit.view}</Badge>}
                 </div>
-                <h1 className="text-3xl font-bold mb-2">Unit A1-2918</h1>
+                <h1 className="text-3xl font-bold mb-2">{unit.unit_name || `${unit.type} Unit`}</h1>
                 <p className="text-muted-foreground flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
-                  Meisterstadt Pollux Habibie • Tower A1
+                  {location?.name}
+                  {unit.building && ` • ${unit.building}`}
+                  {unit.tower && ` • ${unit.tower}`}
                 </p>
               </div>
 
               <div>
                 <h2 className="text-2xl font-semibold mb-4">Description</h2>
                 <p className="text-foreground leading-relaxed">
-                  Experience luxury living in this beautifully designed studio apartment with Japanese-inspired 
-                  aesthetics. Located on the 29th floor, this unit offers stunning city views and comes fully 
-                  furnished with modern amenities. Perfect for both short-term and long-term stays.
+                  {unit.description || `Experience comfortable living in this ${unit.type.toLowerCase()}. ${unit.view ? `Enjoy beautiful ${unit.view.toLowerCase()} from this unit.` : ''} Perfect for both short-term and long-term stays.`}
                 </p>
               </div>
 
-              <div>
-                <h2 className="text-2xl font-semibold mb-4">Facilities</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {[
-                    { icon: Wifi, label: "High-Speed WiFi" },
-                    { icon: Tv, label: "Smart TV" },
-                    { icon: Wind, label: "Air Conditioning" },
-                    { icon: Car, label: "Parking" },
-                    { icon: Building2, label: "Swimming Pool" },
-                    { icon: CheckCircle, label: "24/7 Security" },
-                  ].map((facility, idx) => (
-                    <div key={idx} className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                      <facility.icon className="h-5 w-5 text-primary" />
-                      <span className="text-sm">{facility.label}</span>
-                    </div>
-                  ))}
+              {unit.features && unit.features.length > 0 && (
+                <div>
+                  <h2 className="text-2xl font-semibold mb-4">Facilities</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {unit.features.map((feature, idx) => {
+                      const iconMap: Record<string, any> = {
+                        "WiFi": Wifi,
+                        "Smart TV": Tv,
+                        "Cable TV": Tv,
+                        "Air Conditioning": Wind,
+                        "Parking": Car,
+                        "Free Parking": Car,
+                        "Gym Access": Building2,
+                        "Pool Access": Building2,
+                        "Swimming Pool": Building2,
+                        "24/7 Security": CheckCircle,
+                      };
+                      const Icon = iconMap[feature] || CheckCircle;
+                      
+                      return (
+                        <div key={idx} className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                          <Icon className="h-5 w-5 text-primary" />
+                          <span className="text-sm">{feature}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div>
                 <h2 className="text-2xl font-semibold mb-4">Location</h2>
@@ -256,10 +355,26 @@ const UnitDetail = () => {
                   </div>
 
                   <div>
-                    <div className="text-3xl font-bold text-primary mb-2">
-                      IDR 350K
-                      <span className="text-base font-normal text-muted-foreground">/night</span>
-                    </div>
+                    {unit.price_per_night ? (
+                      <>
+                        <div className="text-3xl font-bold text-primary mb-2">
+                          IDR {unit.price_per_night.toLocaleString()}
+                          <span className="text-base font-normal text-muted-foreground">/night</span>
+                        </div>
+                        {unit.price_per_month && (
+                          <p className="text-sm text-muted-foreground">
+                            Monthly: IDR {unit.price_per_month.toLocaleString()}
+                          </p>
+                        )}
+                      </>
+                    ) : unit.price_per_month ? (
+                      <div className="text-3xl font-bold text-primary mb-2">
+                        IDR {unit.price_per_month.toLocaleString()}
+                        <span className="text-base font-normal text-muted-foreground">/month</span>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Contact for pricing</p>
+                    )}
                     <p className="text-sm text-muted-foreground">Minimum stay: 1 night</p>
                   </div>
 
@@ -388,7 +503,7 @@ const UnitDetail = () => {
                 <div className="space-y-2">
                   <Label>Booked Unit</Label>
                   <Input
-                    value={`Meisterstadt Pollux Habibie Unit ${id}`}
+                    value={`${location?.name || "Unknown"} - ${unit.unit_name || unit.type}`}
                     disabled
                     className="bg-muted"
                   />
