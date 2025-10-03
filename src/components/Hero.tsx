@@ -8,10 +8,10 @@ const Hero = () => {
       
       <div className="container mx-auto px-4 relative z-10 text-center">
         <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground mb-6 animate-fade-in">
-          Your Premium Home in Batam
+          Your Premium Home in Jakarta
         </h1>
         <p className="text-lg md:text-xl text-primary-foreground/90 mb-8 max-w-2xl mx-auto animate-fade-in">
-          Experience the comfort of living in Batam's best apartments with complete facilities and strategic locations. Unforgettable stay experiences await you.
+          Experience the comfort of living in Jakarta's best apartments with complete facilities and strategic locations. Unforgettable stay experiences await you.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in">
           <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">

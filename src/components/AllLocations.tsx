@@ -6,35 +6,35 @@ import { Link } from "react-router-dom";
 
 const locations = [
   {
-    id: "pollux-habibie",
-    name: "Pollux Habibie",
+    id: "senayan-city",
+    name: "Senayan City",
     image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80",
-    area: "Batam City Center",
+    area: "Central Jakarta",
     units: 12,
-    description: "Premium apartments in the heart of Batam with infinity pool and modern gym",
+    description: "Premium apartments in the heart of Jakarta with infinity pool and modern gym",
     features: ["City Mall Access", "Infinity Pool", "Modern Gym"],
   },
   {
-    id: "citra-plaza",
-    name: "Citra Plaza Nagoya",
+    id: "sudirman-plaza",
+    name: "Sudirman Plaza",
     image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80",
-    area: "Nagoya",
+    area: "Sudirman District",
     units: 8,
-    description: "Hotel-standard apartments with stunning city views in prime Nagoya area",
-    features: ["Sea View", "City View", "Premium Design"],
+    description: "Hotel-standard apartments with stunning city views in prime Sudirman area",
+    features: ["City View", "Business District", "Premium Design"],
   },
   {
-    id: "nagoya-thamrin",
-    name: "Nagoya Thamrin City",
+    id: "kuningan-residence",
+    name: "Kuningan Residence",
     image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80",
-    area: "Thamrin",
+    area: "Kuningan Area",
     units: 10,
-    description: "Affordable apartments with complete facilities and easy airport access",
-    features: ["Airport Access", "Complete Facilities", "Strategic Location"],
+    description: "Luxury apartments with complete facilities and easy access to business district",
+    features: ["Business Access", "Complete Facilities", "Strategic Location"],
   },
   {
     id: "house-rental",
-    name: "House Rental Batam",
+    name: "House Rental Jakarta",
     image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&q=80",
     area: "Various Locations",
     units: 5,
@@ -50,7 +50,7 @@ const AllLocations = () => {
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-primary mb-4">Our Locations</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Discover premium apartment locations across Batam with world-class facilities
+            Discover premium apartment locations across Jakarta with world-class facilities
           </p>
         </div>
 

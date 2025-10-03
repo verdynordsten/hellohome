@@ -6,29 +6,29 @@ import { Link } from "react-router-dom";
 
 const locations = [
   {
-    id: "pollux-habibie",
-    name: "Pollux Habibie",
-    description: "Premium apartments in the heart of Batam with infinity pool and modern gym",
+    id: "senayan-city",
+    name: "Senayan City",
+    description: "Premium apartments in the heart of Jakarta with infinity pool and modern gym",
     units: 12,
     image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80",
   },
   {
-    id: "citra-plaza",
-    name: "Citra Plaza Nagoya",
-    description: "Hotel-standard apartments with stunning city views in prime Nagoya area",
+    id: "sudirman-plaza",
+    name: "Sudirman Plaza",
+    description: "Hotel-standard apartments with stunning city views in prime Sudirman area",
     units: 13,
     image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80",
   },
   {
-    id: "nagoya-thamrin",
-    name: "Nagoya Thamrin City",
-    description: "Affordable apartments with complete facilities and easy airport access",
+    id: "kuningan-residence",
+    name: "Kuningan Residence",
+    description: "Luxury apartments with complete facilities and easy access to business district",
     units: 10,
     image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80",
   },
   {
     id: "house-rental",
-    name: "House Rental Batam",
+    name: "House Rental Jakarta",
     description: "Spacious house rentals perfect for families and large groups",
     units: 5,
     image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&q=80",
@@ -44,7 +44,7 @@ const Locations = () => {
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold text-primary mb-4">Our Locations</h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Discover premium apartments across Batam's most strategic locations
+              Discover premium apartments across Jakarta's most strategic locations
             </p>
           </div>
 

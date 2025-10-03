@@ -9,30 +9,23 @@ const About = () => {
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">About HAI Home</h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Your trusted partner for premium apartment rentals in Batam
+            <h1 className="text-4xl font-bold mb-4">About HelloHome</h1>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Your trusted partner for premium apartment rentals in Jakarta
             </p>
           </div>
 
-          <div className="max-w-4xl mx-auto mb-16">
-            <div className="relative h-96 rounded-xl overflow-hidden mb-8">
-              <img
-                src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&q=80"
-                alt="About Us"
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            <div className="prose prose-lg max-w-none">
-              <p className="text-lg text-foreground mb-6">
-                HAI Home is dedicated to providing the best apartment rental experience in Batam. 
+          <div className="max-w-4xl mx-auto space-y-8 mb-12">
+            <div>
+              <h2 className="text-3xl font-bold text-primary mb-4">Who We Are</h2>
+              <p className="text-lg text-muted-foreground leading-relaxed mb-4">
+                HelloHome is dedicated to providing the best apartment rental experience in Jakarta.
                 We specialize in premium, fully-furnished apartments that combine comfort, style, 
                 and strategic locations perfect for both short and long-term stays.
               </p>
               <p className="text-lg text-foreground">
                 Our carefully selected properties offer modern amenities, stunning views, and 
-                exceptional service to ensure your stay in Batam is memorable and comfortable.
+                exceptional service to ensure your stay in Jakarta is memorable and comfortable.
               </p>
             </div>
           </div>

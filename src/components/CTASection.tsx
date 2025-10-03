@@ -6,10 +6,10 @@ const CTASection = () => {
     <section className="py-16 bg-muted/30">
       <div className="container mx-auto px-4 text-center">
         <h2 className="text-3xl font-bold text-primary mb-4">
-          Ready to Book the Best Apartment Batam?
+          Ready to Book the Best Apartment Jakarta?
         </h2>
         <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
-          Contact us now for availability information and special offers on daily apartment batam.
+          Contact us now for availability information and special offers on daily apartment jakarta.
         </p>
         <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
           <Link to="/contact">Contact Us Now</Link>

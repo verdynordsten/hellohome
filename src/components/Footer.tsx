@@ -7,9 +7,9 @@ const Footer = () => {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="text-xl font-bold mb-4">HAI Home</h3>
+            <h3 className="text-xl font-bold mb-4">HelloHome</h3>
             <p className="text-sm opacity-90">
-              Premium apartment rentals in Batam with hotel-grade standards and excellent service.
+              Premium apartment rentals in Jakarta with hotel-grade standards and excellent service.
             </p>
           </div>
 
@@ -42,10 +42,10 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4">Locations</h4>
             <ul className="space-y-2 text-sm opacity-90">
-              <li>Pollux Habibie</li>
-              <li>Citra Plaza Nagoya</li>
-              <li>Nagoya Thamrin City</li>
-              <li>House Rental Batam</li>
+              <li>Senayan City</li>
+              <li>Sudirman Plaza</li>
+              <li>Kuningan Residence</li>
+              <li>House Rental Jakarta</li>
             </ul>
           </div>
 
@@ -54,7 +54,7 @@ const Footer = () => {
             <ul className="space-y-3 text-sm">
               <li className="flex items-start gap-2">
                 <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                <span className="opacity-90">Batam, Indonesia</span>
+                <span className="opacity-90">Jakarta, Indonesia</span>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4 flex-shrink-0" />
@@ -69,7 +69,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-primary-foreground/20 mt-8 pt-8 text-center text-sm opacity-90">
-          <p>&copy; {new Date().getFullYear()} HAI Home. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} HelloHome. All rights reserved.</p>
         </div>
       </div>
     </footer>

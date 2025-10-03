@@ -36,7 +36,7 @@ const SearchSection = () => {
                     <SelectItem value="pollux">Pollux Habibie</SelectItem>
                     <SelectItem value="citra">Citra Plaza Nagoya</SelectItem>
                     <SelectItem value="nagoya">Nagoya Thamrin City</SelectItem>
-                    <SelectItem value="house">House Rental Batam</SelectItem>
+                    <SelectItem value="house">House Rental Jakarta</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
