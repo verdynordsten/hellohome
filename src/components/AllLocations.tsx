@@ -25,13 +25,16 @@ const AllLocations = () => {
 
   const fetchLocations = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch all locations first
+      const { data: allLocations, error } = await supabase
         .from("locations")
-        .select("id, name, description, image_url, units_count, slug")
-        .order("name");
+        .select("id, name, description, image_url, units_count, slug");
 
       if (error) throw error;
-      setLocations(data || []);
+      
+      // Randomly shuffle and select 4 locations
+      const shuffled = (allLocations || []).sort(() => Math.random() - 0.5);
+      setLocations(shuffled.slice(0, 4));
     } catch (error) {
       console.error("Error fetching locations:", error);
     } finally {
