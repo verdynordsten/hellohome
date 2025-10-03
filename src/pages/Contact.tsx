@@ -1,4 +1,5 @@
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -107,8 +108,8 @@ const Contact = () => {
                       <p className="text-sm text-muted-foreground mb-2">
                         Send us your inquiries
                       </p>
-                      <a href="mailto:info@haihome.com" className="text-primary hover:underline">
-                        info@haihome.com
+                      <a href="mailto:info@hellohome.com" className="text-primary hover:underline">
+                        info@hellohome.com
                       </a>
                     </div>
                   </div>
@@ -118,6 +119,7 @@ const Contact = () => {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 };

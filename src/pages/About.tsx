@@ -1,4 +1,5 @@
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Award, Home, Shield, Users } from "lucide-react";
 
@@ -81,6 +82,7 @@ const About = () => {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 };
