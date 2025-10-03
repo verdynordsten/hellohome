@@ -232,7 +232,11 @@ const UnitDetail = () => {
                             mode="single"
                             selected={checkInDate}
                             onSelect={setCheckInDate}
-                            disabled={(date) => date < new Date()}
+                            disabled={(date) => {
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
+                              return date < today;
+                            }}
                             initialFocus
                           />
                         </PopoverContent>
@@ -260,7 +264,11 @@ const UnitDetail = () => {
                             mode="single"
                             selected={checkOutDate}
                             onSelect={setCheckOutDate}
-                            disabled={(date) => date < (checkInDate || new Date())}
+                            disabled={(date) => {
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
+                              return date < (checkInDate || today);
+                            }}
                             initialFocus
                           />
                         </PopoverContent>
