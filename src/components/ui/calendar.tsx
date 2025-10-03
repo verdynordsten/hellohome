@@ -29,7 +29,7 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         day_range_end: "day-range-end",
         day_selected:
           "bg-accent text-accent-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground pointer-events-auto",
-        day_today: "text-primary pointer-events-auto day_today",
+        day_today: "bg-accent/10 text-accent-foreground font-bold hover:bg-accent/20 pointer-events-auto day_today",
         day_outside:
           "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30 pointer-events-auto",
         day_disabled: "text-muted-foreground opacity-50",
