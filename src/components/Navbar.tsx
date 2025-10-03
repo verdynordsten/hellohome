@@ -1,11 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+
+type Location = {
+  id: string;
+  name: string;
+};
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [language, setLanguage] = useState("EN");
+  const [locations, setLocations] = useState<Location[]>([]);
+
+  useEffect(() => {
+    fetchLocations();
+  }, []);
+
+  const fetchLocations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("locations")
+        .select("id, name")
+        .order("name");
+
+      if (error) throw error;
+      setLocations(data || []);
+    } catch (error) {
+      console.error("Error fetching locations:", error);
+    }
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b">
@@ -29,18 +54,15 @@ const Navbar = () => {
                 <ChevronDown className="h-4 w-4" />
               </button>
               <div className="absolute top-full left-0 mt-2 w-56 bg-card rounded-lg shadow-card opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 border">
-                <Link to="/locations/senayan-city" className="block px-4 py-3 hover:bg-muted transition-colors">
-                  Senayan City
-                </Link>
-                <Link to="/locations/sudirman-plaza" className="block px-4 py-3 hover:bg-muted transition-colors">
-                  Sudirman Plaza
-                </Link>
-                <Link to="/locations/kuningan-residence" className="block px-4 py-3 hover:bg-muted transition-colors">
-                  Kuningan Residence
-                </Link>
-                <Link to="/locations/house-rental" className="block px-4 py-3 hover:bg-muted transition-colors border-t">
-                  House Rental Jakarta
-                </Link>
+                {locations.map((location) => (
+                  <Link 
+                    key={location.id}
+                    to={`/locations/${location.id}`} 
+                    className="block px-4 py-3 hover:bg-muted transition-colors"
+                  >
+                    {location.name}
+                  </Link>
+                ))}
                 <Link to="/locations" className="block px-4 py-3 hover:bg-muted rounded-b-lg transition-colors border-t font-medium text-primary">
                   View All Locations
                 </Link>
