@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import type { DateRange } from "react-day-picker";
 import { useParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -19,8 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 const UnitDetail = () => {
   const { id } = useParams();
   const { toast } = useToast();
-  const [checkInDate, setCheckInDate] = useState<Date>();
-  const [checkOutDate, setCheckOutDate] = useState<Date>();
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -67,7 +67,7 @@ const UnitDetail = () => {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const handleBookingSubmit = () => {
-    if (!guestName || !email || !phone || !checkInDate || !checkOutDate) {
+    if (!guestName || !email || !phone || !dateRange?.from || !dateRange?.to) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields",
@@ -85,7 +85,7 @@ const UnitDetail = () => {
       return;
     }
 
-    const message = `*Reservation Form*%0A%0A*Guest Information*%0AName: ${guestName}%0AEmail: ${email}%0APhone: ${phone}%0ANumber of Guests: ${guests}%0A%0A*Booking Details*%0AUnit: ${id}%0ACheck-in: ${format(checkInDate, "dd MMMM yyyy")} at ${checkInTime}%0ACheck-out: ${format(checkOutDate, "dd MMMM yyyy")}%0A%0A*Special Requests*%0A${specialRequests || "None"}`;
+    const message = `*Reservation Form*%0A%0A*Guest Information*%0AName: ${guestName}%0AEmail: ${email}%0APhone: ${phone}%0ANumber of Guests: ${guests}%0A%0A*Booking Details*%0AUnit: ${id}%0ACheck-in: ${format(dateRange.from, "dd MMMM yyyy")} at ${checkInTime}%0ACheck-out: ${format(dateRange.to, "dd MMMM yyyy")}%0A%0A*Special Requests*%0A${specialRequests || "None"}`;
     
     window.open(`https://wa.me/628116918078?text=${message}`, "_blank");
     setShowBookingForm(false);
@@ -211,64 +211,43 @@ const UnitDetail = () => {
                   </div>
 
                   <div className="space-y-4">
-                    {/* Check-in Date */}
+                    {/* Date Range Picker */}
                     <div className="space-y-2">
-                      <Label>Check-in Date</Label>
+                      <Label>Check-in & Check-out Date</Label>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             className={cn(
                               "w-full justify-start text-left font-normal",
-                              !checkInDate && "text-muted-foreground"
+                              !dateRange && "text-muted-foreground"
                             )}
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {checkInDate ? format(checkInDate, "PPP") : <span>Select date</span>}
+                            {dateRange?.from ? (
+                              dateRange.to ? (
+                                <>
+                                  {format(dateRange.from, "dd MMM")} - {format(dateRange.to, "dd MMM yyyy")}
+                                </>
+                              ) : (
+                                format(dateRange.from, "dd MMM yyyy")
+                              )
+                            ) : (
+                              <span>Select dates</span>
+                            )}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
                           <Calendar
-                            mode="single"
-                            selected={checkInDate}
-                            onSelect={setCheckInDate}
+                            mode="range"
+                            selected={dateRange}
+                            onSelect={setDateRange}
                             disabled={(date) => {
                               const today = new Date();
                               today.setHours(0, 0, 0, 0);
                               return date < today;
                             }}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-
-                    {/* Check-out Date */}
-                    <div className="space-y-2">
-                      <Label>Check-out Date</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !checkOutDate && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {checkOutDate ? format(checkOutDate, "PPP") : <span>Select date</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={checkOutDate}
-                            onSelect={setCheckOutDate}
-                            disabled={(date) => {
-                              const today = new Date();
-                              today.setHours(0, 0, 0, 0);
-                              return date < (checkInDate || today);
-                            }}
+                            numberOfMonths={2}
                             initialFocus
                           />
                         </PopoverContent>
@@ -420,7 +399,7 @@ const UnitDetail = () => {
                 <div className="space-y-2">
                   <Label>Check-in Date</Label>
                   <Input
-                    value={checkInDate ? format(checkInDate, "dd MMMM yyyy") : "Not selected"}
+                    value={dateRange?.from ? format(dateRange.from, "dd MMMM yyyy") : "Not selected"}
                     disabled
                     className="bg-muted"
                   />
@@ -429,7 +408,7 @@ const UnitDetail = () => {
                 <div className="space-y-2">
                   <Label>Check-out Date</Label>
                   <Input
-                    value={checkOutDate ? format(checkOutDate, "dd MMMM yyyy") : "Not selected"}
+                    value={dateRange?.to ? format(dateRange.to, "dd MMMM yyyy") : "Not selected"}
                     disabled
                     className="bg-muted"
                   />

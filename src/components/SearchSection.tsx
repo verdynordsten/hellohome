@@ -6,10 +6,10 @@ import { CalendarIcon, MapPin, Search } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import type { DateRange } from "react-day-picker";
 
 const SearchSection = () => {
-  const [checkIn, setCheckIn] = useState<Date>();
-  const [checkOut, setCheckOut] = useState<Date>();
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   return (
     <section id="search" className="py-16 bg-secondary/30">
@@ -21,7 +21,7 @@ const SearchSection = () => {
           </p>
 
           <div className="bg-card p-6 rounded-xl shadow-card">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-end">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
               {/* Location */}
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-2 text-foreground">
@@ -41,11 +41,11 @@ const SearchSection = () => {
                 </Select>
               </div>
 
-              {/* Check-in */}
+              {/* Date Range Picker */}
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-2 text-foreground">
                   <CalendarIcon className="h-4 w-4" />
-                  Check-in
+                  Check-in & Check-out
                 </label>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -53,58 +53,34 @@ const SearchSection = () => {
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal bg-background",
-                        !checkIn && "text-muted-foreground"
+                        !dateRange && "text-muted-foreground"
                       )}
                     >
-                      {checkIn ? format(checkIn, "dd MMM yyyy") : <span>04 Oct 2025</span>}
+                      {dateRange?.from ? (
+                        dateRange.to ? (
+                          <>
+                            {format(dateRange.from, "dd MMM")} - {format(dateRange.to, "dd MMM yyyy")}
+                          </>
+                        ) : (
+                          format(dateRange.from, "dd MMM yyyy")
+                        )
+                      ) : (
+                        <span>Select dates</span>
+                      )}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
                     <Calendar 
-                      mode="single" 
-                      selected={checkIn} 
-                      onSelect={setCheckIn}
+                      mode="range" 
+                      selected={dateRange} 
+                      onSelect={setDateRange}
                       disabled={(date) => {
                         const today = new Date();
                         today.setHours(0, 0, 0, 0);
                         return date < today;
                       }}
                       initialFocus 
-                      className={cn("p-3 pointer-events-auto")}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              {/* Check-out */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2 text-foreground">
-                  <CalendarIcon className="h-4 w-4" />
-                  Check-out
-                </label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal bg-background",
-                        !checkOut && "text-muted-foreground"
-                      )}
-                    >
-                      {checkOut ? format(checkOut, "dd MMM yyyy") : <span>05 Oct 2025</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
-                    <Calendar 
-                      mode="single" 
-                      selected={checkOut} 
-                      onSelect={setCheckOut}
-                      disabled={(date) => {
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        return date < (checkIn || today);
-                      }}
-                      initialFocus 
+                      numberOfMonths={2}
                       className={cn("p-3 pointer-events-auto")}
                     />
                   </PopoverContent>
