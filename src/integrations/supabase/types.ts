@@ -59,6 +59,7 @@ export type Database = {
           image_url: string | null
           images: string[] | null
           location_id: string
+          map_embed_url: string | null
           name: string | null
           price_per_month: number | null
           price_per_night: number | null
@@ -80,6 +81,7 @@ export type Database = {
           image_url?: string | null
           images?: string[] | null
           location_id: string
+          map_embed_url?: string | null
           name?: string | null
           price_per_month?: number | null
           price_per_night?: number | null
@@ -101,6 +103,7 @@ export type Database = {
           image_url?: string | null
           images?: string[] | null
           location_id?: string
+          map_embed_url?: string | null
           name?: string | null
           price_per_month?: number | null
           price_per_night?: number | null

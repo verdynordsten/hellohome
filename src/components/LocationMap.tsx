@@ -1,22 +1,28 @@
 interface LocationMapProps {
   locationName: string;
-  coordinates?: [number, number];
+  embedUrl?: string | null;
 }
 
-const LocationMap = ({ locationName, coordinates = [-6.2088, 106.8456] }: LocationMapProps) => {
-  const [lat, lng] = coordinates;
-  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.01},${lat - 0.01},${lng + 0.01},${lat + 0.01}&layer=mapnik&marker=${lat},${lng}`;
+const LocationMap = ({ locationName, embedUrl }: LocationMapProps) => {
+  // If no embed URL provided, show a placeholder
+  if (!embedUrl) {
+    return (
+      <div className="h-64 rounded-lg overflow-hidden border bg-muted flex items-center justify-center">
+        <p className="text-muted-foreground">Map not available</p>
+      </div>
+    );
+  }
 
   return (
     <div className="h-64 rounded-lg overflow-hidden border">
       <iframe
+        src={embedUrl}
         width="100%"
         height="100%"
-        frameBorder="0"
-        scrolling="no"
-        marginHeight={0}
-        marginWidth={0}
-        src={mapUrl}
+        style={{ border: 0 }}
+        allowFullScreen
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
         title={`Map of ${locationName}`}
         className="w-full h-full"
       />

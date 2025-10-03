@@ -36,6 +36,7 @@ type Unit = {
   price_per_month: number | null;
   description: string | null;
   available: boolean | null;
+  map_embed_url: string | null;
 };
 
 type Location = {
@@ -338,6 +339,7 @@ const UnitDetail = () => {
                 <h2 className="text-2xl font-semibold mb-4">Location</h2>
                 <LocationMap 
                   locationName={location?.name || unit.building || "Location"} 
+                  embedUrl={unit.map_embed_url}
                 />
               </div>
             </div>
