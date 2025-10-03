@@ -28,9 +28,21 @@ const Navbar = () => {
                 <span>Locations</span>
                 <ChevronDown className="h-4 w-4" />
               </button>
-              <div className="absolute top-full left-0 mt-2 w-48 bg-card rounded-lg shadow-card opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                <Link to="/locations" className="block px-4 py-2 hover:bg-muted rounded-t-lg">
-                  All Locations
+              <div className="absolute top-full left-0 mt-2 w-56 bg-card rounded-lg shadow-card opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 border">
+                <Link to="/locations/senayan-city" className="block px-4 py-3 hover:bg-muted transition-colors">
+                  Senayan City
+                </Link>
+                <Link to="/locations/sudirman-plaza" className="block px-4 py-3 hover:bg-muted transition-colors">
+                  Sudirman Plaza
+                </Link>
+                <Link to="/locations/kuningan-residence" className="block px-4 py-3 hover:bg-muted transition-colors">
+                  Kuningan Residence
+                </Link>
+                <Link to="/locations/house-rental" className="block px-4 py-3 hover:bg-muted transition-colors border-t">
+                  House Rental Jakarta
+                </Link>
+                <Link to="/locations" className="block px-4 py-3 hover:bg-muted rounded-b-lg transition-colors border-t font-medium text-primary">
+                  View All Locations
                 </Link>
               </div>
             </div>
