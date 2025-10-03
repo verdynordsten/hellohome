@@ -92,7 +92,7 @@ const AllLocations = () => {
 
               <CardFooter>
                 <Button asChild className="w-full bg-primary hover:bg-primary/90">
-                  <Link to="/locations">View Available Units</Link>
+                  <Link to={`/locations/${location.id}`}>View Available Units</Link>
                 </Button>
               </CardFooter>
             </Card>
