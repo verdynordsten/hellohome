@@ -55,14 +55,29 @@ const LocationUnits = () => {
 
   const fetchLocationAndUnits = async () => {
     try {
-      // Fetch location details by slug or id
-      const { data: locationData, error: locationError } = await supabase
+      // Try to fetch by slug first, then by id
+      let locationData = null;
+      
+      // First try by slug
+      const { data: slugData } = await supabase
         .from("locations")
         .select("*")
-        .or(`slug.eq.${locationSlug},id.eq.${locationSlug}`)
+        .eq("slug", locationSlug)
         .maybeSingle();
+      
+      if (slugData) {
+        locationData = slugData;
+      } else {
+        // If not found by slug, try by id
+        const { data: idData } = await supabase
+          .from("locations")
+          .select("*")
+          .eq("id", locationSlug)
+          .maybeSingle();
+        
+        locationData = idData;
+      }
 
-      if (locationError) throw locationError;
       if (!locationData) {
         setLoading(false);
         return;
