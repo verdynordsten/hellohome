@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Building2, MapPin, CalendarIcon, ArrowLeft } from "lucide-react";
+import { Building2, MapPin, CalendarIcon, ArrowLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -198,14 +198,40 @@ const UnitDetail = () => {
       <Navbar />
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4">
+          {/* Breadcrumbs */}
+          <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+            <Link to="/" className="hover:text-primary transition-colors">
+              Home
+            </Link>
+            <ChevronRight className="h-4 w-4" />
+            <Link to="/locations" className="hover:text-primary transition-colors">
+              Locations
+            </Link>
+            {location && (
+              <>
+                <ChevronRight className="h-4 w-4" />
+                <Link 
+                  to={`/locations/${location.slug || location.id}`}
+                  className="hover:text-primary transition-colors"
+                >
+                  {location.name}
+                </Link>
+              </>
+            )}
+            <ChevronRight className="h-4 w-4" />
+            <span className="text-foreground font-medium">
+              {unit.name || unit.unit_name || unit.type}
+            </span>
+          </nav>
+
           {/* Back Button */}
           {location && (
             <Link 
               to={`/locations/${location.slug || location.id}`}
-              className="inline-flex items-center gap-2 text-primary hover:underline mb-6"
+              className="inline-flex items-center gap-2 text-foreground hover:text-primary transition-colors mb-6 text-base"
             >
-              <ArrowLeft className="h-4 w-4" />
-              Back to {location.name}
+              <ArrowLeft className="h-5 w-5" />
+              <span>Back to {location.name}</span>
             </Link>
           )}
           
