@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Building2, MapPin, CalendarIcon } from "lucide-react";
+import { Building2, MapPin, CalendarIcon, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +40,7 @@ type Unit = {
 type Location = {
   id: string;
   name: string;
+  slug: string | null;
 };
 
 const UnitDetail = () => {
@@ -92,7 +93,7 @@ const UnitDetail = () => {
       if (unitData.location_id) {
         const { data: locationData, error: locationError } = await supabase
           .from("locations")
-          .select("id, name")
+          .select("id, name, slug")
           .eq("id", unitData.location_id)
           .maybeSingle();
 
@@ -197,6 +198,17 @@ const UnitDetail = () => {
       <Navbar />
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4">
+          {/* Back Button */}
+          {location && (
+            <Link 
+              to={`/locations/${location.slug || location.id}`}
+              className="inline-flex items-center gap-2 text-primary hover:underline mb-6"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to {location.name}
+            </Link>
+          )}
+          
           {/* Image Slider */}
           <div className="space-y-4 mb-8">
             {/* Main Image */}
