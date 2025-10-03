@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Building2, MapPin, Wifi, Tv, Wind, Car, CheckCircle, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,18 @@ const UnitDetail = () => {
   const [checkInDate, setCheckInDate] = useState<Date>();
   const [checkOutDate, setCheckOutDate] = useState<Date>();
   const [showBookingForm, setShowBookingForm] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(0);
+
+  // Sample images for the unit
+  const unitImages = [
+    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1502672023488-70e25813eb80?auto=format&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80",
+  ];
   
   // Form state
   const [guestName, setGuestName] = useState("");
@@ -61,13 +74,41 @@ const UnitDetail = () => {
       <Navbar />
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4">
-          {/* Hero Image */}
-          <div className="relative h-[400px] rounded-xl overflow-hidden mb-8">
-            <img
-              src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80"
-              alt="Apartment"
-              className="w-full h-full object-cover"
-            />
+          {/* Image Slider */}
+          <div className="space-y-4 mb-8">
+            {/* Main Image */}
+            <div className="relative h-[400px] rounded-xl overflow-hidden group">
+              <img
+                src={unitImages[selectedImage]}
+                alt={`Apartment view ${selectedImage + 1}`}
+                className="w-full h-full object-cover transition-transform duration-300"
+              />
+              <Badge className="absolute top-4 left-4 bg-primary">
+                Standard Studio
+              </Badge>
+            </div>
+
+            {/* Thumbnails */}
+            <div className="grid grid-cols-7 gap-2">
+              {unitImages.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedImage(index)}
+                  className={cn(
+                    "relative aspect-video rounded-lg overflow-hidden transition-all duration-200",
+                    selectedImage === index
+                      ? "ring-2 ring-primary scale-105"
+                      : "opacity-70 hover:opacity-100 hover:scale-105"
+                  )}
+                >
+                  <img
+                    src={image}
+                    alt={`Thumbnail ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
