@@ -234,7 +234,7 @@ const UnitDetail = () => {
                             onSelect={setCheckInDate}
                             disabled={(date) => date < new Date()}
                             initialFocus
-                            className="pointer-events-auto"
+                            className={cn("p-3 pointer-events-auto")}
                           />
                         </PopoverContent>
                       </Popover>
@@ -263,7 +263,7 @@ const UnitDetail = () => {
                             onSelect={setCheckOutDate}
                             disabled={(date) => date < (checkInDate || new Date())}
                             initialFocus
-                            className="pointer-events-auto"
+                            className={cn("p-3 pointer-events-auto")}
                           />
                         </PopoverContent>
                       </Popover>
