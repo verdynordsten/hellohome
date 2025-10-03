@@ -1,88 +1,85 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Building2 } from "lucide-react";
+import { Building2, Layers } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const locations = [
+const units = [
   {
-    id: "pollux-habibie",
-    name: "Pollux Habibie",
-    image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80",
-    area: "Batam City Center",
-    units: 12,
-    description: "Premium apartments in the heart of Batam with infinity pool and modern gym",
-    features: ["City Mall Access", "Infinity Pool", "Modern Gym"],
+    id: "ph-a1-2918",
+    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80",
+    type: "Studio",
+    floor: 29,
+    unit: "Unit A1-2918",
+    building: "Meisterstadt Pollux Habibie",
+    tower: "Tower A1",
+    features: ["Japanese Design", "City View"],
   },
   {
-    id: "citra-plaza",
-    name: "Citra Plaza Nagoya",
-    image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80",
-    area: "Nagoya",
-    units: 8,
-    description: "Hotel-standard apartments with stunning city views in prime Nagoya area",
-    features: ["Sea View", "City View", "Premium Design"],
-  },
-  {
-    id: "nagoya-thamrin",
-    name: "Nagoya Thamrin City",
+    id: "cp-3702a",
     image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80",
-    area: "Thamrin",
-    units: 10,
-    description: "Affordable apartments with complete facilities and easy airport access",
-    features: ["Airport Access", "Complete Facilities", "Strategic Location"],
+    type: "Studio",
+    floor: 37,
+    unit: "Unit 3702A",
+    building: "Citra Plaza Nagoya",
+    tower: "",
+    features: ["Sea View", "Modern Design", "Prime Location"],
   },
   {
-    id: "house-rental",
-    name: "House Rental Batam",
-    image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&q=80",
-    area: "Various Locations",
-    units: 5,
-    description: "Spacious house rentals perfect for families and large groups",
-    features: ["4 Bedrooms", "Kitchen", "Free Parking"],
+    id: "ph-a1-5310",
+    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&q=80",
+    type: "Studio",
+    floor: 53,
+    unit: "Unit A1-5310",
+    building: "Meisterstadt Pollux Habibie",
+    tower: "Tower A1",
+    features: ["Sea View", "High Floor"],
   },
 ];
 
 const FeaturedUnits = () => {
   return (
-    <section className="py-16 bg-background">
+    <section className="py-16 bg-muted/30">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-primary mb-4">Our Locations</h2>
+          <h2 className="text-3xl font-bold text-primary mb-4">Featured Units</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Discover premium apartment locations across Batam with world-class facilities
+            Our best apartment selections with premium facilities and stunning views
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {locations.map((location) => (
-            <Card key={location.id} className="overflow-hidden hover:shadow-card-hover transition-all duration-300 group">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {units.map((unit) => (
+            <Card key={unit.id} className="overflow-hidden hover:shadow-card-hover transition-all duration-300 group">
               <div className="relative overflow-hidden">
                 <img
-                  src={location.image}
-                  alt={location.name}
+                  src={unit.image}
+                  alt={unit.unit}
                   className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
                 />
                 <div className="absolute top-4 left-4 flex gap-2">
                   <Badge variant="secondary" className="bg-primary/90 text-primary-foreground">
                     <Building2 className="h-3 w-3 mr-1" />
-                    {location.units} Units Available
+                    {unit.type}
+                  </Badge>
+                  <Badge variant="secondary" className="bg-accent/90 text-accent-foreground">
+                    <Layers className="h-3 w-3 mr-1" />
+                    Floor {unit.floor}
                   </Badge>
                 </div>
               </div>
 
               <CardHeader>
-                <h3 className="text-2xl font-bold">{location.name}</h3>
-                <p className="text-sm text-muted-foreground flex items-center gap-1">
-                  <MapPin className="h-4 w-4" />
-                  {location.area}
+                <h3 className="text-xl font-bold">{unit.unit}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {unit.building}
+                  {unit.tower && ` • ${unit.tower}`}
                 </p>
               </CardHeader>
 
               <CardContent>
-                <p className="text-muted-foreground mb-4">{location.description}</p>
                 <div className="flex flex-wrap gap-2">
-                  {location.features.map((feature, idx) => (
+                  {unit.features.map((feature, idx) => (
                     <Badge key={idx} variant="outline">
                       {feature}
                     </Badge>
@@ -92,7 +89,7 @@ const FeaturedUnits = () => {
 
               <CardFooter>
                 <Button asChild className="w-full bg-primary hover:bg-primary/90">
-                  <Link to="/locations">View Available Units</Link>
+                  <Link to={`/unit/${unit.id}`}>View Details & Book</Link>
                 </Button>
               </CardFooter>
             </Card>

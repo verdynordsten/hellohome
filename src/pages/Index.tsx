@@ -1,6 +1,7 @@
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import SearchSection from "@/components/SearchSection";
+import AllLocations from "@/components/AllLocations";
 import FeaturedUnits from "@/components/FeaturedUnits";
 import LocationsOverview from "@/components/LocationsOverview";
 import Facilities from "@/components/Facilities";
@@ -15,6 +16,7 @@ const Index = () => {
       <Navbar />
       <Hero />
       <SearchSection />
+      <AllLocations />
       <FeaturedUnits />
       <LocationsOverview />
       <Facilities />
