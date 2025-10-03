@@ -59,8 +59,10 @@ export type Database = {
           image_url: string | null
           images: string[] | null
           location_id: string
+          name: string | null
           price_per_month: number | null
           price_per_night: number | null
+          slug: string | null
           tower: string | null
           type: string
           unit_name: string | null
@@ -78,8 +80,10 @@ export type Database = {
           image_url?: string | null
           images?: string[] | null
           location_id: string
+          name?: string | null
           price_per_month?: number | null
           price_per_night?: number | null
+          slug?: string | null
           tower?: string | null
           type: string
           unit_name?: string | null
@@ -97,8 +101,10 @@ export type Database = {
           image_url?: string | null
           images?: string[] | null
           location_id?: string
+          name?: string | null
           price_per_month?: number | null
           price_per_night?: number | null
+          slug?: string | null
           tower?: string | null
           type?: string
           unit_name?: string | null

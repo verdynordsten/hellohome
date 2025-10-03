@@ -60,13 +60,31 @@ const UnitDetail = () => {
 
   const fetchUnitDetails = async () => {
     try {
-      const { data: unitData, error: unitError } = await supabase
+      // Try to fetch by slug first, then by id
+      let unitData = null;
+      
+      const { data: slugData } = await supabase
         .from("units")
         .select("*")
-        .eq("id", id)
-        .single();
-
-      if (unitError) throw unitError;
+        .eq("slug", id)
+        .maybeSingle();
+      
+      if (slugData) {
+        unitData = slugData;
+      } else {
+        const { data: idData } = await supabase
+          .from("units")
+          .select("*")
+          .eq("id", id)
+          .maybeSingle();
+        
+        unitData = idData;
+      }
+      
+      if (!unitData) {
+        setLoading(false);
+        return;
+      }
       setUnit(unitData);
 
       // Fetch location details
@@ -75,10 +93,10 @@ const UnitDetail = () => {
           .from("locations")
           .select("id, name")
           .eq("id", unitData.location_id)
-          .single();
+          .maybeSingle();
 
         if (locationError) throw locationError;
-        setLocation(locationData);
+        if (locationData) setLocation(locationData);
       }
     } catch (error) {
       console.error("Error fetching unit:", error);

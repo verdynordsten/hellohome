@@ -13,6 +13,7 @@ type Unit = {
   floor: string | null;
   image_url: string | null;
   features: string[] | null;
+  slug: string | null;
 };
 
 const FeaturedUnits = () => {
@@ -27,7 +28,7 @@ const FeaturedUnits = () => {
     try {
       const { data, error } = await supabase
         .from("units")
-        .select("id, unit_name, type, floor, image_url, features")
+        .select("id, unit_name, type, floor, image_url, features, slug")
         .eq("available", true)
         .limit(3);
 
@@ -99,7 +100,7 @@ const FeaturedUnits = () => {
 
               <CardFooter>
                 <Button asChild className="w-full bg-primary hover:bg-primary/90">
-                  <Link to={`/unit/${unit.id}`}>View Details & Book</Link>
+                  <Link to={`/unit/${unit.slug || unit.id}`}>View Details & Book</Link>
                 </Button>
               </CardFooter>
             </Card>

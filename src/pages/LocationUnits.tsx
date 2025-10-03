@@ -28,6 +28,7 @@ type Unit = {
   image_url: string | null;
   price_per_night: number | null;
   available: boolean | null;
+  slug: string | null;
 };
 
 const featureIcons: Record<string, any> = {
@@ -198,7 +199,7 @@ const LocationUnits = () => {
 
                 <CardFooter>
                   <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                    <Link to={`/unit/${unit.id}`}>View Details</Link>
+                    <Link to={`/unit/${unit.slug || unit.id}`}>View Details</Link>
                   </Button>
                 </CardFooter>
               </Card>

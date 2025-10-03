@@ -14,6 +14,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 type Unit = {
   id: string;
   location_id: string;
+  name: string | null;
+  slug: string | null;
   type: string;
   unit_name: string | null;
   floor: string | null;
@@ -42,6 +44,8 @@ export const AdminUnits = () => {
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [formData, setFormData] = useState({
     location_id: "",
+    name: "",
+    slug: "",
     type: "",
     unit_name: "",
     floor: "",
@@ -115,6 +119,8 @@ export const AdminUnits = () => {
 
       const unitData = {
         location_id: formData.location_id,
+        name: formData.name || null,
+        slug: formData.slug || null,
         type: formData.type,
         unit_name: formData.unit_name || null,
         floor: formData.floor || null,
@@ -160,6 +166,8 @@ export const AdminUnits = () => {
       setDialogOpen(false);
       setFormData({
         location_id: "",
+        name: "",
+        slug: "",
         type: "",
         unit_name: "",
         floor: "",
@@ -189,6 +197,8 @@ export const AdminUnits = () => {
     setEditingUnit(unit);
     setFormData({
       location_id: unit.location_id,
+      name: unit.name || "",
+      slug: unit.slug || "",
       type: unit.type,
       unit_name: unit.unit_name || "",
       floor: unit.floor || "",
@@ -232,6 +242,8 @@ export const AdminUnits = () => {
   const resetForm = () => {
     setFormData({
       location_id: "",
+      name: "",
+      slug: "",
       type: "",
       unit_name: "",
       floor: "",
@@ -306,6 +318,30 @@ export const AdminUnits = () => {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="name">Name (Display)</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    placeholder="e.g. Premium Studio Apartment"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="slug">Slug (URL-friendly)</Label>
+                  <Input
+                    id="slug"
+                    value={formData.slug}
+                    onChange={(e) =>
+                      setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })
+                    }
+                    placeholder="premium-studio-apartment"
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="type">Unit Type</Label>
                   <Input
                     id="type"
@@ -319,14 +355,14 @@ export const AdminUnits = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="unit_name">Unit Name</Label>
+                  <Label htmlFor="unit_name">Unit Name (Building)</Label>
                   <Input
                     id="unit_name"
                     value={formData.unit_name}
                     onChange={(e) =>
                       setFormData({ ...formData, unit_name: e.target.value })
                     }
-                    placeholder="e.g. Deluxe Suite"
+                    placeholder="e.g. Unit 1205"
                   />
                 </div>
 
