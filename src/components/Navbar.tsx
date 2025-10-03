@@ -1,36 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-
-type Location = {
-  id: string;
-  name: string;
-};
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [language, setLanguage] = useState("EN");
-  const [locations, setLocations] = useState<Location[]>([]);
-
-  useEffect(() => {
-    fetchLocations();
-  }, []);
-
-  const fetchLocations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("locations")
-        .select("id, name")
-        .order("name");
-
-      if (error) throw error;
-      setLocations(data || []);
-    } catch (error) {
-      console.error("Error fetching locations:", error);
-    }
-  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b">
@@ -48,26 +23,9 @@ const Navbar = () => {
             <Link to="/" className="text-foreground hover:text-primary transition-colors">
               Home
             </Link>
-            <div className="relative group">
-              <button className="flex items-center space-x-1 text-foreground hover:text-primary transition-colors">
-                <span>Locations</span>
-                <ChevronDown className="h-4 w-4" />
-              </button>
-              <div className="absolute top-full left-0 mt-2 w-56 bg-card rounded-lg shadow-card opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 border">
-                {locations.map((location) => (
-                  <Link 
-                    key={location.id}
-                    to={`/locations/${location.id}`} 
-                    className="block px-4 py-3 hover:bg-muted transition-colors"
-                  >
-                    {location.name}
-                  </Link>
-                ))}
-                <Link to="/locations" className="block px-4 py-3 hover:bg-muted rounded-b-lg transition-colors border-t font-medium text-primary">
-                  View All Locations
-                </Link>
-              </div>
-            </div>
+            <Link to="/locations" className="text-foreground hover:text-primary transition-colors">
+              Locations
+            </Link>
             <Link to="/about" className="text-foreground hover:text-primary transition-colors">
               About Us
             </Link>
