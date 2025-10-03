@@ -17,7 +17,7 @@ const Hero = () => {
           <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">
             <Link to="#search">Find Apartment</Link>
           </Button>
-          <Button asChild size="lg" variant="outline" className="border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10">
+          <Button asChild size="lg" variant="hero">
             <a href="https://wa.me/628116918078" target="_blank" rel="noopener noreferrer">
               Book Now
             </a>
