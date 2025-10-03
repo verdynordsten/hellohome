@@ -16,6 +16,7 @@ type Location = {
   description: string | null;
   units_count: number;
   image_url: string | null;
+  slug: string | null;
 };
 
 export const AdminLocations = () => {
@@ -27,6 +28,7 @@ export const AdminLocations = () => {
     name: "",
     description: "",
     image_url: "",
+    slug: "",
   });
   const { toast } = useToast();
 
@@ -84,7 +86,7 @@ export const AdminLocations = () => {
       }
 
       setDialogOpen(false);
-      setFormData({ name: "", description: "", image_url: "" });
+      setFormData({ name: "", description: "", image_url: "", slug: "" });
       setEditingLocation(null);
       fetchLocations();
     } catch (error: any) {
@@ -102,6 +104,7 @@ export const AdminLocations = () => {
       name: location.name,
       description: location.description || "",
       image_url: location.image_url || "",
+      slug: location.slug || "",
     });
     setDialogOpen(true);
   };
@@ -133,7 +136,7 @@ export const AdminLocations = () => {
   };
 
   const resetForm = () => {
-    setFormData({ name: "", description: "", image_url: "" });
+    setFormData({ name: "", description: "", image_url: "", slug: "" });
     setEditingLocation(null);
   };
 
@@ -188,6 +191,16 @@ export const AdminLocations = () => {
                   value={formData.image_url}
                   onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
                   placeholder="https://example.com/image.jpg"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="slug">Slug (URL-friendly name)</Label>
+                <Input
+                  id="slug"
+                  value={formData.slug}
+                  onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
+                  placeholder="senayan-city"
+                  required
                 />
               </div>
               <Button type="submit" className="w-full">

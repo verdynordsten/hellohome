@@ -14,6 +14,7 @@ type Location = {
   description: string | null;
   units_count: number;
   image_url: string | null;
+  slug: string | null;
 };
 
 type Unit = {
@@ -41,34 +42,38 @@ const featureIcons: Record<string, any> = {
   "24/7 Security": CheckCircle,
 };
 const LocationUnits = () => {
-  const { locationId } = useParams();
+  const { locationId: locationSlug } = useParams();
   const [location, setLocation] = useState<Location | null>(null);
   const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (locationId) {
+    if (locationSlug) {
       fetchLocationAndUnits();
     }
-  }, [locationId]);
+  }, [locationSlug]);
 
   const fetchLocationAndUnits = async () => {
     try {
-      // Fetch location details
+      // Fetch location details by slug or id
       const { data: locationData, error: locationError } = await supabase
         .from("locations")
         .select("*")
-        .eq("id", locationId)
-        .single();
+        .or(`slug.eq.${locationSlug},id.eq.${locationSlug}`)
+        .maybeSingle();
 
       if (locationError) throw locationError;
+      if (!locationData) {
+        setLoading(false);
+        return;
+      }
       setLocation(locationData);
 
       // Fetch units for this location
       const { data: unitsData, error: unitsError } = await supabase
         .from("units")
         .select("*")
-        .eq("location_id", locationId)
+        .eq("location_id", locationData.id)
         .order("floor");
 
       if (unitsError) throw unitsError;

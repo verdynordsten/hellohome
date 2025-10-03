@@ -12,6 +12,7 @@ type Location = {
   description: string | null;
   image_url: string | null;
   units_count: number | null;
+  slug: string | null;
 };
 
 const AllLocations = () => {
@@ -26,7 +27,7 @@ const AllLocations = () => {
     try {
       const { data, error } = await supabase
         .from("locations")
-        .select("id, name, description, image_url, units_count")
+        .select("id, name, description, image_url, units_count, slug")
         .order("name");
 
       if (error) throw error;
@@ -85,7 +86,7 @@ const AllLocations = () => {
 
               <CardFooter>
                 <Button asChild className="w-full bg-primary hover:bg-primary/90">
-                  <Link to={`/locations/${location.id}`}>View Available Units</Link>
+                  <Link to={`/locations/${location.slug || location.id}`}>View Available Units</Link>
                 </Button>
               </CardFooter>
             </Card>
