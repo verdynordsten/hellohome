@@ -15,12 +15,17 @@ type Unit = {
   id: string;
   location_id: string;
   type: string;
+  unit_name: string | null;
   floor: string | null;
   building: string | null;
   tower: string | null;
+  view: string | null;
+  description: string | null;
   features: string[] | null;
+  images: string[] | null;
   image_url: string | null;
   price_per_month: number | null;
+  price_per_night: number | null;
   available: boolean;
 };
 
@@ -38,12 +43,17 @@ export const AdminUnits = () => {
   const [formData, setFormData] = useState({
     location_id: "",
     type: "",
+    unit_name: "",
     floor: "",
     building: "",
     tower: "",
+    view: "",
+    description: "",
     features: "",
+    images: "",
     image_url: "",
     price_per_month: "",
+    price_per_night: "",
     available: true,
   });
   const { toast } = useToast();
@@ -98,17 +108,28 @@ export const AdminUnits = () => {
       const featuresArray = formData.features
         ? formData.features.split(",").map((f) => f.trim())
         : [];
+      
+      const imagesArray = formData.images
+        ? formData.images.split(",").map((img) => img.trim())
+        : [];
 
       const unitData = {
         location_id: formData.location_id,
         type: formData.type,
+        unit_name: formData.unit_name || null,
         floor: formData.floor || null,
         building: formData.building || null,
         tower: formData.tower || null,
+        view: formData.view || null,
+        description: formData.description || null,
         features: featuresArray,
+        images: imagesArray,
         image_url: formData.image_url || null,
         price_per_month: formData.price_per_month
           ? parseFloat(formData.price_per_month)
+          : null,
+        price_per_night: formData.price_per_night
+          ? parseFloat(formData.price_per_night)
           : null,
         available: formData.available,
       };
@@ -140,12 +161,17 @@ export const AdminUnits = () => {
       setFormData({
         location_id: "",
         type: "",
+        unit_name: "",
         floor: "",
         building: "",
         tower: "",
+        view: "",
+        description: "",
         features: "",
+        images: "",
         image_url: "",
         price_per_month: "",
+        price_per_night: "",
         available: true,
       });
       setEditingUnit(null);
@@ -164,12 +190,17 @@ export const AdminUnits = () => {
     setFormData({
       location_id: unit.location_id,
       type: unit.type,
+      unit_name: unit.unit_name || "",
       floor: unit.floor || "",
       building: unit.building || "",
       tower: unit.tower || "",
+      view: unit.view || "",
+      description: unit.description || "",
       features: unit.features?.join(", ") || "",
+      images: unit.images?.join(", ") || "",
       image_url: unit.image_url || "",
       price_per_month: unit.price_per_month?.toString() || "",
+      price_per_night: unit.price_per_night?.toString() || "",
       available: unit.available,
     });
     setDialogOpen(true);
@@ -202,12 +233,17 @@ export const AdminUnits = () => {
     setFormData({
       location_id: "",
       type: "",
+      unit_name: "",
       floor: "",
       building: "",
       tower: "",
+      view: "",
+      description: "",
       features: "",
+      images: "",
       image_url: "",
       price_per_month: "",
+      price_per_night: "",
       available: true,
     });
     setEditingUnit(null);
@@ -283,6 +319,18 @@ export const AdminUnits = () => {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="unit_name">Unit Name</Label>
+                  <Input
+                    id="unit_name"
+                    value={formData.unit_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, unit_name: e.target.value })
+                    }
+                    placeholder="e.g. Deluxe Suite"
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="floor">Floor</Label>
                   <Input
                     id="floor"
@@ -319,6 +367,18 @@ export const AdminUnits = () => {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="view">View</Label>
+                  <Input
+                    id="view"
+                    value={formData.view}
+                    onChange={(e) =>
+                      setFormData({ ...formData, view: e.target.value })
+                    }
+                    placeholder="e.g. City View, Ocean View"
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="price_per_month">Price per Month</Label>
                   <Input
                     id="price_per_month"
@@ -334,6 +394,35 @@ export const AdminUnits = () => {
                     placeholder="1500.00"
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="price_per_night">Price per Night</Label>
+                  <Input
+                    id="price_per_night"
+                    type="number"
+                    step="0.01"
+                    value={formData.price_per_night}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        price_per_night: e.target.value,
+                      })
+                    }
+                    placeholder="50.00"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Input
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  placeholder="Brief description of the unit"
+                />
               </div>
 
               <div className="space-y-2">
@@ -351,7 +440,19 @@ export const AdminUnits = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="image_url">Image URL</Label>
+                <Label htmlFor="images">Images (comma-separated URLs)</Label>
+                <Input
+                  id="images"
+                  value={formData.images}
+                  onChange={(e) =>
+                    setFormData({ ...formData, images: e.target.value })
+                  }
+                  placeholder="https://example.com/img1.jpg, https://example.com/img2.jpg"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="image_url">Main Image URL</Label>
                 <Input
                   id="image_url"
                   type="url"
@@ -394,11 +495,12 @@ export const AdminUnits = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Name</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Location</TableHead>
-                <TableHead>Floor</TableHead>
-                <TableHead>Building</TableHead>
+                <TableHead>View</TableHead>
                 <TableHead>Price/Month</TableHead>
+                <TableHead>Price/Night</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -406,13 +508,18 @@ export const AdminUnits = () => {
             <TableBody>
               {units.map((unit) => (
                 <TableRow key={unit.id}>
-                  <TableCell className="font-medium">{unit.type}</TableCell>
+                  <TableCell className="font-medium">{unit.unit_name || "-"}</TableCell>
+                  <TableCell>{unit.type}</TableCell>
                   <TableCell>{getLocationName(unit.location_id)}</TableCell>
-                  <TableCell>{unit.floor || "-"}</TableCell>
-                  <TableCell>{unit.building || "-"}</TableCell>
+                  <TableCell>{unit.view || "-"}</TableCell>
                   <TableCell>
                     {unit.price_per_month
-                      ? `$${unit.price_per_month}`
+                      ? `$${parseFloat(unit.price_per_month.toString()).toFixed(2)}`
+                      : "-"}
+                  </TableCell>
+                  <TableCell>
+                    {unit.price_per_night
+                      ? `$${parseFloat(unit.price_per_night.toString()).toFixed(2)}`
                       : "-"}
                   </TableCell>
                   <TableCell>
@@ -447,7 +554,7 @@ export const AdminUnits = () => {
               {units.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={8}
                     className="text-center text-muted-foreground"
                   >
                     No units found
