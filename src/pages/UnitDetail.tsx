@@ -17,6 +17,7 @@ import { Building2, MapPin, CalendarIcon, ArrowLeft, ChevronRight } from "lucide
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import LocationMap from "@/components/LocationMap";
 
 type Unit = {
   id: string;
@@ -335,9 +336,9 @@ const UnitDetail = () => {
 
               <div>
                 <h2 className="text-2xl font-semibold mb-4">Location</h2>
-                <div className="bg-muted rounded-lg h-64 flex items-center justify-center">
-                  <p className="text-muted-foreground">Map view placeholder</p>
-                </div>
+                <LocationMap 
+                  locationName={location?.name || unit.building || "Location"} 
+                />
               </div>
             </div>
 
