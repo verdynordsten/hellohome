@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 
 type Unit = {
   id: string;
+  name: string | null;
   unit_name: string | null;
   type: string;
   floor: string | null;
@@ -28,7 +29,7 @@ const FeaturedUnits = () => {
     try {
       const { data, error } = await supabase
         .from("units")
-        .select("id, unit_name, type, floor, image_url, features, slug")
+        .select("id, name, unit_name, type, floor, image_url, features, slug")
         .eq("available", true)
         .limit(3);
 
@@ -85,7 +86,7 @@ const FeaturedUnits = () => {
               </div>
 
               <CardHeader>
-                <h3 className="text-xl font-bold">{unit.unit_name || `${unit.type} Unit`}</h3>
+                <h3 className="text-xl font-bold">{unit.name || unit.unit_name || `${unit.type} Unit`}</h3>
               </CardHeader>
 
               <CardContent>

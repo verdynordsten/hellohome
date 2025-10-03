@@ -20,6 +20,7 @@ type Location = {
 type Unit = {
   id: string;
   location_id: string;
+  name: string | null;
   unit_name: string | null;
   type: string;
   floor: string | null;
@@ -171,7 +172,7 @@ const LocationUnits = () => {
                 </div>
 
                 <CardHeader>
-                  <h3 className="text-xl font-bold">{unit.unit_name || `${unit.type} Unit`}</h3>
+                  <h3 className="text-xl font-bold">{unit.name || unit.unit_name || `${unit.type} Unit`}</h3>
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <span>Floor {unit.floor || "N/A"}</span>
                     <span>{unit.view || "City View"}</span>
