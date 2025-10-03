@@ -49,43 +49,58 @@ export type Database = {
           available: boolean | null
           building: string | null
           created_at: string | null
+          description: string | null
           features: string[] | null
           floor: string | null
           id: string
           image_url: string | null
+          images: string[] | null
           location_id: string
           price_per_month: number | null
+          price_per_night: number | null
           tower: string | null
           type: string
+          unit_name: string | null
           updated_at: string | null
+          view: string | null
         }
         Insert: {
           available?: boolean | null
           building?: string | null
           created_at?: string | null
+          description?: string | null
           features?: string[] | null
           floor?: string | null
           id?: string
           image_url?: string | null
+          images?: string[] | null
           location_id: string
           price_per_month?: number | null
+          price_per_night?: number | null
           tower?: string | null
           type: string
+          unit_name?: string | null
           updated_at?: string | null
+          view?: string | null
         }
         Update: {
           available?: boolean | null
           building?: string | null
           created_at?: string | null
+          description?: string | null
           features?: string[] | null
           floor?: string | null
           id?: string
           image_url?: string | null
+          images?: string[] | null
           location_id?: string
           price_per_month?: number | null
+          price_per_night?: number | null
           tower?: string | null
           type?: string
+          unit_name?: string | null
           updated_at?: string | null
+          view?: string | null
         }
         Relationships: [
           {
