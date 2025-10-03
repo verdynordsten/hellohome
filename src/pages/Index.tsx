@@ -2,6 +2,12 @@ import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import SearchSection from "@/components/SearchSection";
 import FeaturedUnits from "@/components/FeaturedUnits";
+import LocationsOverview from "@/components/LocationsOverview";
+import Facilities from "@/components/Facilities";
+import WhyChooseUs from "@/components/WhyChooseUs";
+import Testimonials from "@/components/Testimonials";
+import CTASection from "@/components/CTASection";
+import Footer from "@/components/Footer";
 
 const Index = () => {
   return (
@@ -10,6 +16,12 @@ const Index = () => {
       <Hero />
       <SearchSection />
       <FeaturedUnits />
+      <LocationsOverview />
+      <Facilities />
+      <WhyChooseUs />
+      <Testimonials />
+      <CTASection />
+      <Footer />
     </div>
   );
 };
