@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useLocationStore } from "@/stores";
+import { Location, CreateLocationInput, UpdateLocationInput } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,20 +9,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Edit } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-
-type Location = {
-  id: string;
-  name: string;
-  description: string | null;
-  units_count: number;
-  image_url: string | null;
-  slug: string | null;
-};
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const AdminLocations = () => {
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { locations, isLoading, fetchLocations, createLocation, updateLocation, deleteLocation } = useLocationStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
   const [formData, setFormData] = useState({
@@ -33,66 +35,60 @@ export const AdminLocations = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchLocations();
-  }, []);
-
-  const fetchLocations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("locations")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setLocations(data || []);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+    if (locations.length === 0) {
+      fetchLocations();
     }
-  };
+  }, [fetchLocations, locations.length]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
       if (editingLocation) {
-        const { error } = await supabase
-          .from("locations")
-          .update(formData)
-          .eq("id", editingLocation.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Location updated",
-          description: "The location has been successfully updated.",
-        });
+        const updateData: UpdateLocationInput = {
+          name: formData.name,
+          description: formData.description || undefined,
+          image_url: formData.image_url || undefined,
+          slug: formData.slug || undefined,
+        };
+        
+        const result = await updateLocation(editingLocation.id, updateData);
+        
+        if (result) {
+          toast({
+            title: "Location updated",
+            description: "The location has been successfully updated.",
+          });
+        } else {
+          throw new Error("Failed to update location");
+        }
       } else {
-        const { error } = await supabase
-          .from("locations")
-          .insert([formData]);
-
-        if (error) throw error;
-
-        toast({
-          title: "Location created",
-          description: "The location has been successfully created.",
-        });
+        const createData: CreateLocationInput = {
+          name: formData.name,
+          description: formData.description || undefined,
+          image_url: formData.image_url || undefined,
+          slug: formData.slug || undefined,
+        };
+        
+        const result = await createLocation(createData);
+        
+        if (result) {
+          toast({
+            title: "Location created",
+            description: "The location has been successfully created.",
+          });
+        } else {
+          throw new Error("Failed to create location");
+        }
       }
 
       setDialogOpen(false);
       setFormData({ name: "", description: "", image_url: "", slug: "" });
       setEditingLocation(null);
-      fetchLocations();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message,
+        description: (error as Error).message,
         variant: "destructive",
       });
     }
@@ -110,26 +106,21 @@ export const AdminLocations = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this location?")) return;
-
     try {
-      const { error } = await supabase
-        .from("locations")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Location deleted",
-        description: "The location has been successfully deleted.",
-      });
-
-      fetchLocations();
-    } catch (error: any) {
+      const result = await deleteLocation(id);
+      
+      if (result) {
+        toast({
+          title: "Location deleted",
+          description: "The location has been successfully deleted.",
+        });
+      } else {
+        throw new Error("Failed to delete location");
+      }
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message,
+        description: (error as Error).message,
         variant: "destructive",
       });
     }
@@ -140,7 +131,7 @@ export const AdminLocations = () => {
     setEditingLocation(null);
   };
 
-  if (loading) {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
 
@@ -163,6 +154,12 @@ export const AdminLocations = () => {
               <DialogTitle>
                 {editingLocation ? "Edit Location" : "Add New Location"}
               </DialogTitle>
+              <DialogDescription>
+                {editingLocation
+                  ? "Make changes to the location details below. Click save when you're done."
+                  : "Fill in the details for the new location below. Click create when you're done."
+                }
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -235,20 +232,50 @@ export const AdminLocations = () => {
                   </TableCell>
                   <TableCell>{location.units_count}</TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(location)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(location.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Edit Location?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            You are about to edit the location "{location.name}". This will open the edit form where you can make changes to the location details.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleEdit(location)}>Edit</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the location "{location.name}" and remove all its data from our servers.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(location.id)}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </TableCell>
                 </TableRow>
               ))}

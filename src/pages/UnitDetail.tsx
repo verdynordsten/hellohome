@@ -1,88 +1,44 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { DateRange } from "react-day-picker";
 import { useParams, Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useUnitStore, useLocationStore } from "@/stores";
+import { Unit, Location } from "@/types";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Building2, MapPin, CalendarIcon, ArrowLeft, ChevronRight } from "lucide-react";
+import { MapPin, CalendarIcon, ArrowLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import LocationMap from "@/components/LocationMap";
 
-type Unit = {
-  id: string;
-  location_id: string;
-  name: string | null;
-  unit_name: string | null;
-  type: string;
-  floor: string | null;
-  building: string | null;
-  tower: string | null;
-  view: string | null;
-  features: string[] | null;
-  images: string[] | null;
-  image_url: string | null;
-  price_per_night: number | null;
-  price_per_month: number | null;
-  description: string | null;
-  available: boolean | null;
-  map_embed_url: string | null;
-};
-
-type Location = {
-  id: string;
-  name: string;
-  slug: string | null;
-};
-
 const UnitDetail = () => {
   const { id } = useParams();
   const { toast } = useToast();
+  const { fetchUnitBySlug, fetchUnitById } = useUnitStore();
+  const { fetchLocationById } = useLocationStore();
   const [unit, setUnit] = useState<Unit | null>(null);
   const [location, setLocation] = useState<Location | null>(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [_isTransitioning, setIsTransitioning] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      fetchUnitDetails();
-    }
-  }, [id]);
-
-  const fetchUnitDetails = async () => {
+  const fetchUnitDetails = useCallback(async () => {
     try {
       // Try to fetch by slug first, then by id
-      let unitData = null;
+      let unitData = await fetchUnitBySlug(id);
       
-      const { data: slugData } = await supabase
-        .from("units")
-        .select("*")
-        .eq("slug", id)
-        .maybeSingle();
-      
-      if (slugData) {
-        unitData = slugData;
-      } else {
-        const { data: idData } = await supabase
-          .from("units")
-          .select("*")
-          .eq("id", id)
-          .maybeSingle();
-        
-        unitData = idData;
+      if (!unitData) {
+        unitData = await fetchUnitById(id);
       }
       
       if (!unitData) {
@@ -93,13 +49,7 @@ const UnitDetail = () => {
 
       // Fetch location details
       if (unitData.location_id) {
-        const { data: locationData, error: locationError } = await supabase
-          .from("locations")
-          .select("id, name, slug")
-          .eq("id", unitData.location_id)
-          .maybeSingle();
-
-        if (locationError) throw locationError;
+        const locationData = await fetchLocationById(unitData.location_id);
         if (locationData) setLocation(locationData);
       }
     } catch (error) {
@@ -107,7 +57,13 @@ const UnitDetail = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchUnitBySlug, fetchUnitById, fetchLocationById, id]);
+
+  useEffect(() => {
+    if (id) {
+      fetchUnitDetails();
+    }
+  }, [id, fetchUnitDetails]);
 
   const unitImages = unit?.images && unit.images.length > 0 
     ? unit.images 
@@ -401,18 +357,18 @@ const UnitDetail = () => {
                     {unit.price_per_night ? (
                       <>
                         <div className="text-3xl font-bold text-primary mb-2">
-                          IDR {unit.price_per_night.toLocaleString()}
+                          $ {unit.price_per_night.toLocaleString()}
                           <span className="text-base font-normal text-muted-foreground">/night</span>
                         </div>
                         {unit.price_per_month && (
                           <p className="text-sm text-muted-foreground">
-                            Monthly: IDR {unit.price_per_month.toLocaleString()}
+                            Monthly: $ {unit.price_per_month.toLocaleString()}
                           </p>
                         )}
                       </>
                     ) : unit.price_per_month ? (
                       <div className="text-3xl font-bold text-primary mb-2">
-                        IDR {unit.price_per_month.toLocaleString()}
+                        $ {unit.price_per_month.toLocaleString()}
                         <span className="text-base font-normal text-muted-foreground">/month</span>
                       </div>
                     ) : (
@@ -469,6 +425,9 @@ const UnitDetail = () => {
               <CalendarIcon className="h-5 w-5 text-primary" />
               Reservation Form
             </DialogTitle>
+            <DialogDescription>
+              Fill in your details to reserve this unit. The information will be sent to us via WhatsApp for confirmation.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6 py-4">

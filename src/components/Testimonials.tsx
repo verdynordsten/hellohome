@@ -26,7 +26,7 @@ const Testimonials = () => {
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-primary mb-4">What Our Guests Say</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Real experiences from guests who have felt the comfort of Hai Home Apartment
+            Real experiences from guests who have felt the comfort of Hello Home Apartment
           </p>
         </div>
 

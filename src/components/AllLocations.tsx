@@ -1,48 +1,25 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
+import { useLocationStore } from "@/stores";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Building2 } from "lucide-react";
+import { Building2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-type Location = {
-  id: string;
-  name: string;
-  description: string | null;
-  image_url: string | null;
-  units_count: number | null;
-  slug: string | null;
-};
-
 const AllLocations = () => {
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { locations, isLoading, fetchLocations } = useLocationStore();
 
   useEffect(() => {
-    fetchLocations();
-  }, []);
-
-  const fetchLocations = async () => {
-    try {
-      // Fetch all locations first
-      const { data: allLocations, error } = await supabase
-        .from("locations")
-        .select("id, name, description, image_url, units_count, slug");
-
-      if (error) throw error;
-      
-      // Randomly shuffle and select 4 locations
-      const shuffled = (allLocations || []).sort(() => Math.random() - 0.5);
-      setLocations(shuffled.slice(0, 4));
-    } catch (error) {
-      console.error("Error fetching locations:", error);
-    } finally {
-      setLoading(false);
+    if (locations.length === 0) {
+      fetchLocations();
     }
-  };
+  }, [fetchLocations, locations.length]);
+  
+  // Randomly shuffle and select 4 locations
+  const shuffled = [...locations].sort(() => Math.random() - 0.5);
+  const displayLocations = shuffled.slice(0, 4);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4 text-center">
@@ -63,7 +40,7 @@ const AllLocations = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {locations.map((location) => (
+          {displayLocations.map((location) => (
             <Card key={location.id} className="overflow-hidden hover:shadow-card-hover transition-all duration-300 group">
               <div className="relative overflow-hidden">
                 <img

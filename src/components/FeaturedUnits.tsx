@@ -1,48 +1,26 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
+import { useUnitStore } from "@/stores";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Layers } from "lucide-react";
 import { Link } from "react-router-dom";
 
-type Unit = {
-  id: string;
-  name: string | null;
-  unit_name: string | null;
-  type: string;
-  floor: string | null;
-  image_url: string | null;
-  features: string[] | null;
-  slug: string | null;
-};
-
 const FeaturedUnits = () => {
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { units, isLoading, fetchUnits } = useUnitStore();
 
   useEffect(() => {
-    fetchFeaturedUnits();
-  }, []);
-
-  const fetchFeaturedUnits = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("units")
-        .select("id, name, unit_name, type, floor, image_url, features, slug")
-        .eq("available", true)
-        .limit(3);
-
-      if (error) throw error;
-      setUnits(data || []);
-    } catch (error) {
-      console.error("Error fetching featured units:", error);
-    } finally {
-      setLoading(false);
+    if (units.length === 0) {
+      fetchUnits();
     }
-  };
+  }, [fetchUnits, units.length]);
+  
+  // Filter available units and limit to 3
+  const featuredUnits = units
+    .filter(unit => unit.available)
+    .slice(0, 3);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4 text-center">
@@ -63,7 +41,7 @@ const FeaturedUnits = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {units.map((unit) => (
+          {featuredUnits.map((unit) => (
             <Card key={unit.id} className="overflow-hidden hover:shadow-card-hover transition-all duration-300 group">
               <div className="relative overflow-hidden">
                 <img

@@ -1,72 +1,63 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useLocationStore, useUnitStore } from "@/stores";
+import { Location, Unit } from "@/types";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Building2 } from "lucide-react";
-
-type Location = {
-  id: string;
-  name: string;
-  description: string | null;
-  units_count: number;
-  image_url: string | null;
-  slug: string | null;
-};
-
-type Unit = {
-  id: string;
-  location_id: string;
-  name: string | null;
-  unit_name: string | null;
-  type: string;
-  floor: string | null;
-  view: string | null;
-  features: string[] | null;
-  image_url: string | null;
-  price_per_night: number | null;
-  available: boolean | null;
-  slug: string | null;
-};
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MapPin, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 const LocationUnits = () => {
   const { locationId: locationSlug } = useParams();
+  const { fetchLocationBySlug, fetchLocationById } = useLocationStore();
+  const {
+    fetchUnitsByLocationIdPaginated,
+    currentPage,
+    totalPages,
+    totalUnits,
+    unitsPerPage,
+    searchQuery,
+    sortBy,
+    sortOrder,
+    setSearchQuery,
+    setCurrentPage,
+    setSorting
+  } = useUnitStore();
   const [location, setLocation] = useState<Location | null>(null);
   const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [searchInput, setSearchInput] = useState("");
+  
+  // Set a fixed units per page value
   useEffect(() => {
-    if (locationSlug) {
-      fetchLocationAndUnits();
+    if (unitsPerPage !== 9) {
+      // This will trigger a fetch with the correct limit
+      setSorting(sortBy || 'price_per_night', sortOrder || 'asc');
     }
-  }, [locationSlug]);
+  }, [unitsPerPage, sortBy, sortOrder, setSorting]);
 
-  const fetchLocationAndUnits = async () => {
+  const fetchLocationAndUnits = useCallback(async () => {
+    setLoading(true);
     try {
       // Try to fetch by slug first, then by id
-      let locationData = null;
+      let locationData = await fetchLocationBySlug(locationSlug);
       
-      // First try by slug
-      const { data: slugData } = await supabase
-        .from("locations")
-        .select("*")
-        .eq("slug", locationSlug)
-        .maybeSingle();
-      
-      if (slugData) {
-        locationData = slugData;
-      } else {
+      if (!locationData) {
         // If not found by slug, try by id
-        const { data: idData } = await supabase
-          .from("locations")
-          .select("*")
-          .eq("id", locationSlug)
-          .maybeSingle();
-        
-        locationData = idData;
+        locationData = await fetchLocationById(locationSlug);
       }
 
       if (!locationData) {
@@ -75,20 +66,74 @@ const LocationUnits = () => {
       }
       setLocation(locationData);
 
-      // Fetch units for this location
-      const { data: unitsData, error: unitsError } = await supabase
-        .from("units")
-        .select("*")
-        .eq("location_id", locationData.id)
-        .order("floor");
-
-      if (unitsError) throw unitsError;
-      setUnits(unitsData || []);
+      // Fetch units for this location with pagination and sorting
+      const response = await fetchUnitsByLocationIdPaginated(locationData.id, {
+        page: currentPage,
+        limit: 9, // Fixed limit of 9 units per page
+        search: searchQuery,
+        sortBy: sortBy || 'price_per_night',
+        sortOrder: sortOrder || 'asc'
+      });
+      
+      // Set units from the response
+      setUnits(response.units);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
+  }, [fetchLocationBySlug, fetchLocationById, fetchUnitsByLocationIdPaginated, currentPage, unitsPerPage, searchQuery, sortBy, sortOrder, locationSlug]);
+
+  useEffect(() => {
+    if (locationSlug) {
+      fetchLocationAndUnits();
+    }
+  }, [locationSlug, fetchLocationAndUnits]);
+
+  // Handle search input with debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput !== searchQuery) {
+        setSearchQuery(searchInput);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchInput, searchQuery, setSearchQuery]);
+
+  // Fetch units when pagination or sorting changes
+  useEffect(() => {
+    if (location) {
+      fetchUnitsByLocationIdPaginated(location.id, {
+        page: currentPage,
+        limit: 9, // Fixed limit of 9 units per page
+        search: searchQuery,
+        sortBy: sortBy || 'price_per_night',
+        sortOrder: sortOrder || 'asc'
+      }).then((response) => {
+        // Set units from the response
+        setUnits(response.units);
+      });
+    }
+  }, [currentPage, searchQuery, sortBy, sortOrder, fetchUnitsByLocationIdPaginated, location]);
+
+  const _handleSort = (column: string) => {
+    if (sortBy === column) {
+      // Toggle sort order if same column
+      setSorting(column, sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Set new column with default asc order
+      setSorting(column, 'asc');
+    }
+  };
+
+  const _getSortIcon = (column: string) => {
+    if (sortBy !== column) {
+      return <ArrowUpDown className="ml-2 h-4 w-4" />;
+    }
+    return sortOrder === 'asc'
+      ? <ArrowUp className="ml-2 h-4 w-4" />
+      : <ArrowDown className="ml-2 h-4 w-4" />;
   };
 
   if (loading) {
@@ -139,7 +184,48 @@ const LocationUnits = () => {
 
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-8">Available Units ({units.length})</h2>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <h2 className="text-3xl font-bold">Available Units ({totalUnits})</h2>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search units..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="pl-8 w-full sm:w-64"
+                />
+              </div>
+              <Select
+                value={sortBy || 'price_per_night'}
+                onValueChange={(value) => setSorting(value, sortOrder || 'asc')}
+              >
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="price_per_night">Price/Night</SelectItem>
+                  <SelectItem value="price_per_month">Price/Month</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={sortOrder || 'asc'}
+                onValueChange={(value: 'asc' | 'desc') => setSorting(sortBy || 'price_per_night', value)}
+              >
+                <SelectTrigger className="w-full sm:w-32">
+                  <SelectValue placeholder="Order" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="asc">Low to High</SelectItem>
+                  <SelectItem value="desc">High to Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="mb-4 text-sm text-muted-foreground">
+            Showing {units.length} of {totalUnits} units
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {units.map((unit) => (
@@ -178,7 +264,7 @@ const LocationUnits = () => {
                   </div>
                   {unit.price_per_night && (
                     <p className="text-lg font-bold text-primary">
-                      IDR {unit.price_per_night.toLocaleString()}<span className="text-sm font-normal text-muted-foreground">/night</span>
+                      $ {unit.price_per_night.toLocaleString()}<span className="text-sm font-normal text-muted-foreground">/night</span>
                     </p>
                   )}
                 </CardContent>
@@ -191,6 +277,63 @@ const LocationUnits = () => {
               </Card>
             ))}
           </div>
+          
+          {totalPages > 1 && (
+            <div className="mt-8">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                    // Show first page, last page, current page, and pages around current page
+                    if (
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    ) {
+                      return (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            onClick={() => setCurrentPage(page)}
+                            isActive={page === currentPage}
+                            className="cursor-pointer"
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    }
+                    
+                    // Show ellipsis for gaps
+                    if (
+                      (page === 2 && currentPage > 3) ||
+                      (page === totalPages - 1 && currentPage < totalPages - 2)
+                    ) {
+                      return (
+                        <PaginationItem key={page}>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      );
+                    }
+                    
+                    return null;
+                  })}
+                  
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </div>
       </section>
 

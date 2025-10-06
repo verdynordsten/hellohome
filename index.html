@@ -3,22 +3,71 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HAI Home - Premium Apartment Rentals in Batam</title>
-    <meta name="description" content="Discover premium apartments in Batam with HAI Home. Fully furnished units with stunning views, modern amenities, and strategic locations for your perfect stay." />
-    <meta name="author" content="HAI Home" />
+    <title>Hello Home - Premium Apartment Rentals in Batam</title>
+    <meta name="description" content="Discover premium apartments in Batam with Hello Home. Fully furnished units with stunning views, modern amenities, and strategic locations for your perfect stay." />
+    <meta name="author" content="Hello Home" />
 
-    <meta property="og:title" content="HAI Home - Premium Apartment Rentals in Batam" />
+    <meta property="og:title" content="Hello Home - Premium Apartment Rentals in Batam" />
     <meta property="og:description" content="Experience luxury living in Batam's best apartments with complete facilities and strategic locations." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:image" content="/placeholder.svg" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta name="twitter:site" content="@hellohome" />
+    <meta name="twitter:image" content="/placeholder.svg" />
   </head>
 
   <body>
     <div id="root"></div>
+    <!-- Buffer polyfill for postgres package -->
+    <script>
+      // Polyfill for Buffer to fix "Cannot read properties of undefined (reading 'allocUnsafe')"
+      (function() {
+        // Simple Buffer polyfill for browser
+        if (typeof globalThis !== 'undefined' && !globalThis.Buffer) {
+          globalThis.Buffer = {
+            allocUnsafe: function(size) {
+              return new Uint8Array(size);
+            },
+            alloc: function(size) {
+              return new Uint8Array(size);
+            },
+            byteLength: function(str) {
+              return new TextEncoder().encode(str).length;
+            },
+            concat: function(arrays) {
+              let totalLength = 0;
+              for (const arr of arrays) {
+                totalLength += arr.length;
+              }
+              const result = new Uint8Array(totalLength);
+              let offset = 0;
+              for (const arr of arrays) {
+                result.set(arr, offset);
+                offset += arr.length;
+              }
+              return result;
+            }
+          };
+          
+          // Make it available globally
+          globalThis.global = globalThis;
+          if (typeof window !== 'undefined') {
+            window.Buffer = globalThis.Buffer;
+            window.global = globalThis;
+          }
+        }
+      })();
+      
+      // Suppress React DevTools message in development
+      const originalConsoleInfo = console.info;
+      console.info = function(...args) {
+        if (typeof args[0] === 'string' && args[0].includes('Download the React DevTools')) {
+          return; // Suppress this specific message
+        }
+        return originalConsoleInfo.apply(console, args);
+      };
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

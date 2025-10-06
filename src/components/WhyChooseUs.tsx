@@ -29,7 +29,7 @@ const WhyChooseUs = () => {
     <section className="py-16 bg-muted/30">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-primary mb-4">Why Choose Hai Home?</h2>
+          <h2 className="text-3xl font-bold text-primary mb-4">Why Choose Hello Home?</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Best stay experience with premium facilities and satisfying service
           </p>

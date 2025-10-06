@@ -23,7 +23,7 @@ INSERT INTO locations (id, name, description, image_url, slug, units_count, crea
 
 -- Note: Due to the large size of the units data (168 units with complete details),
 -- the full export is available in your database.
--- You can access all data through your Lovable Cloud backend.
+-- You can access all data through your database backend.
 
 -- Summary:
 -- - 12 Locations across Jakarta

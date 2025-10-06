@@ -1,45 +1,24 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
+import { useLocationStore } from "@/stores";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 
-type Location = {
-  id: string;
-  name: string;
-  description: string | null;
-  units_count: number;
-  image_url: string | null;
-  slug: string | null;
-};
-
 const Locations = () => {
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { locations, isLoading, fetchLocations } = useLocationStore();
 
   useEffect(() => {
-    fetchLocations();
-  }, []);
-
-  const fetchLocations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("locations")
-        .select("*")
-        .order("name");
-
-      if (error) throw error;
-      setLocations(data || []);
-    } catch (error) {
-      console.error("Error fetching locations:", error);
-    } finally {
-      setLoading(false);
+    if (locations.length === 0) {
+      fetchLocations();
     }
-  };
+  }, [fetchLocations, locations.length]);
+  
+  // Sort locations by name
+  const sortedLocations = [...locations].sort((a, b) => a.name.localeCompare(b.name));
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -60,7 +39,7 @@ const Locations = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {locations.map((location) => (
+            {sortedLocations.map((location) => (
               <Link key={location.id} to={`/locations/${location.slug || location.id}`}>
                 <Card className="overflow-hidden hover:shadow-card-hover transition-all group cursor-pointer">
                   <div className="relative overflow-hidden h-64">
@@ -78,7 +57,7 @@ const Locations = () => {
                     <CardDescription className="text-base">{location.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-accent font-medium">{location.units_count} available units</p>
+                    <p className="text-sm text-accent font-medium">{location.units_count || 0} available units</p>
                   </CardContent>
                 </Card>
               </Link>
