@@ -34,7 +34,6 @@ const UnitDetail = () => {
 
   const fetchUnitDetails = useCallback(async () => {
     try {
-      // Try to fetch by slug first, then by id
       let unitData = await fetchUnitBySlug(id);
       
       if (!unitData) {
@@ -47,7 +46,6 @@ const UnitDetail = () => {
       }
       setUnit(unitData);
 
-      // Fetch location details
       if (unitData.location_id) {
         const locationData = await fetchLocationById(unitData.location_id);
         if (locationData) setLocation(locationData);
@@ -73,7 +71,6 @@ const UnitDetail = () => {
         "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800",
       ];
 
-  // Autoplay functionality
   useEffect(() => {
     const interval = setInterval(() => {
       setIsTransitioning(true);
@@ -81,7 +78,7 @@ const UnitDetail = () => {
         setSelectedImage((prev) => (prev + 1) % unitImages.length);
         setIsTransitioning(false);
       }, 300);
-    }, 4000); // Change image every 4 seconds
+    }, 4000);
 
     return () => clearInterval(interval);
   }, [unitImages.length]);
@@ -94,7 +91,6 @@ const UnitDetail = () => {
     }, 300);
   };
   
-  // Form state
   const [guestName, setGuestName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -156,7 +152,6 @@ const UnitDetail = () => {
       <Navbar />
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4">
-          {/* Breadcrumbs */}
           <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
             <Link to="/" className="hover:text-primary transition-colors">
               Home
@@ -182,7 +177,6 @@ const UnitDetail = () => {
             </span>
           </nav>
 
-          {/* Back Button */}
           {location && (
             <Link 
               to={`/locations/${location.slug || location.id}`}
@@ -193,9 +187,7 @@ const UnitDetail = () => {
             </Link>
           )}
           
-          {/* Image Slider */}
           <div className="space-y-4 mb-8">
-            {/* Main Image */}
             <div className="relative h-[400px] rounded-xl overflow-hidden group">
               <div className="relative w-full h-full">
                 {unitImages.map((image, index) => (
@@ -221,13 +213,11 @@ const UnitDetail = () => {
                 </Badge>
               )}
               
-              {/* Image counter */}
               <div className="absolute bottom-4 right-4 bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full text-sm z-10">
                 {selectedImage + 1} / {unitImages.length}
               </div>
             </div>
 
-            {/* Thumbnails */}
             <div className="grid grid-cols-7 gap-2">
               {unitImages.map((image, index) => (
                 <button
@@ -254,7 +244,6 @@ const UnitDetail = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
             <div className="lg:col-span-2 space-y-8">
               <div>
                 <div className="flex items-center gap-2 mb-4">
@@ -300,7 +289,6 @@ const UnitDetail = () => {
               </div>
             </div>
 
-            {/* Booking Card */}
             <div className="lg:col-span-1">
               <Card className="sticky top-24">
                 <CardContent className="pt-6 space-y-6">
@@ -309,7 +297,6 @@ const UnitDetail = () => {
                   </div>
 
                   <div className="space-y-4">
-                    {/* Date Range Picker */}
                     <div className="space-y-2">
                       <Label>Check-in & Check-out Date</Label>
                       <Popover>
@@ -417,7 +404,6 @@ const UnitDetail = () => {
         </div>
       </main>
 
-      {/* Booking Form Dialog */}
       <Dialog open={showBookingForm} onOpenChange={setShowBookingForm}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -431,7 +417,6 @@ const UnitDetail = () => {
           </DialogHeader>
 
           <div className="space-y-6 py-4">
-            {/* Guest Information */}
             <div className="space-y-4">
               <h3 className="font-semibold flex items-center gap-2">
                 <span className="text-primary">👤</span>
@@ -485,7 +470,6 @@ const UnitDetail = () => {
               </div>
             </div>
 
-            {/* Booking Details */}
             <div className="space-y-4">
               <h3 className="font-semibold flex items-center gap-2">
                 <span className="text-primary">📅</span>
@@ -554,7 +538,6 @@ const UnitDetail = () => {
               </div>
             </div>
 
-            {/* Terms */}
             <div className="flex items-start gap-2">
               <input
                 type="checkbox"
@@ -568,7 +551,6 @@ const UnitDetail = () => {
               </Label>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-3 pt-4">
               <Button
                 variant="outline"

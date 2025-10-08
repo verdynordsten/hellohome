@@ -4,7 +4,6 @@ interface LocationMapProps {
 }
 
 const LocationMap = ({ locationName, embedUrl }: LocationMapProps) => {
-  // If no embed URL provided, show a placeholder
   if (!embedUrl) {
     return (
       <div className="h-64 rounded-lg overflow-hidden border bg-muted flex items-center justify-center">

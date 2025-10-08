@@ -15,7 +15,6 @@ const FeaturedUnits = () => {
     }
   }, [fetchUnits, units.length]);
   
-  // Filter available units and limit to 3
   const featuredUnits = units
     .filter(unit => unit.available)
     .slice(0, 3);

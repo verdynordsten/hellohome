@@ -33,7 +33,6 @@ export const useAuthStore = create<AuthState>()(
 
           const data = await response.json();
           
-          // Store token in localStorage
           localStorage.setItem('auth_token', data.token);
           
           set({
@@ -49,7 +48,6 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: (): void => {
-        // Remove token from localStorage
         localStorage.removeItem('auth_token');
         
         set({
@@ -76,7 +74,6 @@ export const useAuthStore = create<AuthState>()(
           });
 
           if (!response.ok) {
-            // Token is invalid, remove it and set unauthenticated
             localStorage.removeItem('auth_token');
             set({ isAuthenticated: false, user: null });
             return;

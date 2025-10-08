@@ -1,13 +1,20 @@
 import { Router, Response } from 'express';
-import { db } from '../config/database';
-import { units } from '../../src/db/schema';
+import { db } from '../../config/database';
+import { units } from '../../../src/db/schema';
 import { eq, desc, ilike, or, count, and } from 'drizzle-orm';
-import { mapDrizzleUnit } from '../utils/mappers';
-import { authenticateToken } from '../middleware/auth';
+import { mapDrizzleUnit } from '../../utils/mappers';
+import { authenticateToken } from '../../middleware/auth';
+import {
+  sendSuccessResponse,
+  sendBadRequestResponse,
+  sendErrorResponse,
+  sendNotFoundResponse,
+  sendCreatedResponse,
+  sendNoContentResponse
+} from '../../utils/response';
 
 const router = Router();
 
-// Get all units with pagination, search, and sorting
 router.get('/', async (req, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -17,7 +24,6 @@ router.get('/', async (req, res: Response) => {
     const sortOrder = req.query.sortOrder as string || 'desc';
     const offset = (page - 1) * limit;
 
-    // Build the query conditions
     let whereCondition = undefined;
     if (search) {
       whereCondition = or(
@@ -32,7 +38,6 @@ router.get('/', async (req, res: Response) => {
       );
     }
 
-    // Get total count for pagination
     const countResult = await db
       .select({ count: count() })
       .from(units)
@@ -41,7 +46,6 @@ router.get('/', async (req, res: Response) => {
     const total = countResult[0]?.count || 0;
     const totalPages = Math.ceil(total / limit);
 
-    // Determine the sort column and order
     let sortColumn;
     switch (sortBy) {
       case 'name':
@@ -80,7 +84,6 @@ router.get('/', async (req, res: Response) => {
         break;
     }
 
-    // Get the paginated results with sorting
     const result = await db
       .select()
       .from(units)
@@ -91,7 +94,7 @@ router.get('/', async (req, res: Response) => {
     
     const mappedUnits = result.map(mapDrizzleUnit);
     
-    res.json({
+    sendSuccessResponse(res, 'Units fetched successfully', {
       units: mappedUnits,
       total,
       page,
@@ -100,23 +103,21 @@ router.get('/', async (req, res: Response) => {
     });
   } catch (error) {
     console.error('Failed to fetch units:', error);
-    res.status(500).json({ error: 'Failed to fetch units' });
+    sendErrorResponse(res, 'Failed to fetch units');
   }
 });
 
-// Get all units (legacy endpoint for backward compatibility)
 router.get('/all', async (_req, res: Response) => {
   try {
     const result = await db.select().from(units).orderBy(desc(units.createdAt));
     const mappedUnits = result.map(mapDrizzleUnit);
-    res.json(mappedUnits);
+    sendSuccessResponse(res, 'All units fetched successfully', mappedUnits);
   } catch (error) {
     console.error('Failed to fetch all units:', error);
-    res.status(500).json({ error: 'Failed to fetch all units' });
+    sendErrorResponse(res, 'Failed to fetch all units');
   }
 });
 
-// Get units by location ID
 router.get('/location/:locationId', async (req, res: Response) => {
   try {
     const { locationId } = req.params;
@@ -127,7 +128,6 @@ router.get('/location/:locationId', async (req, res: Response) => {
     const sortOrder = req.query.sortOrder as string || 'desc';
     const offset = (page - 1) * limit;
 
-    // Build the query conditions
     let whereCondition;
     if (search) {
       whereCondition = and(
@@ -147,7 +147,6 @@ router.get('/location/:locationId', async (req, res: Response) => {
       whereCondition = eq(units.locationId, locationId);
     }
 
-    // Get total count for pagination
     const countResult = await db
       .select({ count: count() })
       .from(units)
@@ -156,7 +155,6 @@ router.get('/location/:locationId', async (req, res: Response) => {
     const total = countResult[0]?.count || 0;
     const totalPages = Math.ceil(total / limit);
 
-    // Determine the sort column and order
     let sortColumn;
     switch (sortBy) {
       case 'name':
@@ -195,7 +193,6 @@ router.get('/location/:locationId', async (req, res: Response) => {
         break;
     }
 
-    // Get the paginated results with sorting
     const result = await db
       .select()
       .from(units)
@@ -206,7 +203,7 @@ router.get('/location/:locationId', async (req, res: Response) => {
     
     const mappedUnits = result.map(mapDrizzleUnit);
     
-    res.json({
+    sendSuccessResponse(res, 'Units by location fetched successfully', {
       units: mappedUnits,
       total,
       page,
@@ -215,53 +212,48 @@ router.get('/location/:locationId', async (req, res: Response) => {
     });
   } catch (error) {
     console.error('Failed to fetch units by location ID:', error);
-    res.status(500).json({ error: 'Failed to fetch units' });
+    sendErrorResponse(res, 'Failed to fetch units');
   }
 });
 
-// Get unit by ID
 router.get('/:id', async (req, res: Response) => {
   try {
     const { id } = req.params;
     const result = await db.select().from(units).where(eq(units.id, id)).limit(1);
     if (result.length === 0) {
-      return res.status(404).json({ error: 'Unit not found' });
+      return sendNotFoundResponse(res, 'Unit not found');
     }
     const mappedUnit = mapDrizzleUnit(result[0]);
-    res.json(mappedUnit);
+    sendSuccessResponse(res, 'Unit fetched successfully', mappedUnit);
   } catch (error) {
     console.error('Failed to fetch unit by ID:', error);
-    res.status(500).json({ error: 'Failed to fetch unit' });
+    sendErrorResponse(res, 'Failed to fetch unit');
   }
 });
 
-// Get unit by slug
 router.get('/slug/:slug', async (req, res: Response) => {
   try {
     const { slug } = req.params;
     const result = await db.select().from(units).where(eq(units.slug, slug)).limit(1);
     if (result.length === 0) {
-      return res.status(404).json({ error: 'Unit not found' });
+      return sendNotFoundResponse(res, 'Unit not found');
     }
     const mappedUnit = mapDrizzleUnit(result[0]);
-    res.json(mappedUnit);
+    sendSuccessResponse(res, 'Unit fetched successfully', mappedUnit);
   } catch (error) {
     console.error('Failed to fetch unit by slug:', error);
-    res.status(500).json({ error: 'Failed to fetch unit' });
+    sendErrorResponse(res, 'Failed to fetch unit');
   }
 });
 
-// Create unit
 router.post('/', authenticateToken, async (req, res: Response) => {
   try {
     const unitData = req.body;
     
-    // Validate required fields
     if (!unitData.location_id || !unitData.type) {
-      return res.status(400).json({ error: 'Location ID and type are required' });
+      return sendBadRequestResponse(res, 'Location ID and type are required');
     }
     
-    // Insert the new unit
     const result = await db.insert(units).values({
       locationId: unitData.location_id,
       type: unitData.type,
@@ -283,30 +275,27 @@ router.post('/', authenticateToken, async (req, res: Response) => {
     }).returning();
     
     if (result.length === 0) {
-      return res.status(500).json({ error: 'Failed to create unit' });
+      return sendErrorResponse(res, 'Failed to create unit');
     }
     
     const mappedUnit = mapDrizzleUnit(result[0]);
-    res.status(201).json(mappedUnit);
+    sendCreatedResponse(res, 'Unit created successfully', mappedUnit);
   } catch (error) {
     console.error('Failed to create unit:', error);
-    res.status(500).json({ error: 'Failed to create unit' });
+    sendErrorResponse(res, 'Failed to create unit');
   }
 });
 
-// Update unit
 router.put('/:id', authenticateToken, async (req, res: Response) => {
   try {
     const { id } = req.params;
     const unitData = req.body;
     
-    // Check if unit exists
     const existingUnit = await db.select().from(units).where(eq(units.id, id)).limit(1);
     if (existingUnit.length === 0) {
-      return res.status(404).json({ error: 'Unit not found' });
+      return sendNotFoundResponse(res, 'Unit not found');
     }
     
-    // Update the unit
     const result = await db.update(units)
       .set({
         locationId: unitData.location_id !== undefined ? unitData.location_id : existingUnit[0].locationId,
@@ -332,39 +321,36 @@ router.put('/:id', authenticateToken, async (req, res: Response) => {
       .returning();
     
     if (result.length === 0) {
-      return res.status(500).json({ error: 'Failed to update unit' });
+      return sendErrorResponse(res, 'Failed to update unit');
     }
     
     const mappedUnit = mapDrizzleUnit(result[0]);
-    res.json(mappedUnit);
+    sendSuccessResponse(res, 'Unit updated successfully', mappedUnit);
   } catch (error) {
     console.error('Failed to update unit:', error);
-    res.status(500).json({ error: 'Failed to update unit' });
+    sendErrorResponse(res, 'Failed to update unit');
   }
 });
 
-// Delete unit
 router.delete('/:id', authenticateToken, async (req, res: Response) => {
   try {
     const { id } = req.params;
     
-    // Check if unit exists
     const existingUnit = await db.select().from(units).where(eq(units.id, id)).limit(1);
     if (existingUnit.length === 0) {
-      return res.status(404).json({ error: 'Unit not found' });
+      return sendNotFoundResponse(res, 'Unit not found');
     }
     
-    // Delete the unit
     const result = await db.delete(units).where(eq(units.id, id)).returning();
     
     if (result.length === 0) {
-      return res.status(500).json({ error: 'Failed to delete unit' });
+      return sendErrorResponse(res, 'Failed to delete unit');
     }
     
-    res.status(204).send();
+    sendNoContentResponse(res, 'Unit deleted successfully');
   } catch (error) {
     console.error('Failed to delete unit:', error);
-    res.status(500).json({ error: 'Failed to delete unit' });
+    sendErrorResponse(res, 'Failed to delete unit');
   }
 });
 

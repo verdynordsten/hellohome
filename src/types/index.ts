@@ -1,4 +1,3 @@
-// Centralized data types for the application
 
 export type AppRole = "admin" | "user";
 
@@ -43,7 +42,6 @@ export interface UserRole {
   created_at: string | null;
 }
 
-// Input types for creating/updating data
 export interface CreateLocationInput {
   name: string;
   description?: string;
@@ -100,14 +98,12 @@ export interface UpdateUnitInput {
   map_embed_url?: string;
 }
 
-// API Response types
 export interface ApiResponse<T> {
   data: T | null;
   error: string | null;
   isLoading: boolean;
 }
 
-// Store types for Zustand
 export interface AuthState {
   user: {
     id: string;
@@ -141,13 +137,13 @@ export interface UnitState {
   unitsByLocation: Record<string, Unit[]>;
   isLoading: boolean;
   error: string | null;
-  // Pagination state
+  
   currentPage: number;
   totalPages: number;
   totalUnits: number;
   unitsPerPage: number;
   searchQuery: string;
-  // Sorting state
+
   sortBy: string;
   sortOrder: 'asc' | 'desc';
   fetchUnits: (params?: { page?: number; limit?: number; search?: string; sortBy?: string; sortOrder?: 'asc' | 'desc' }) => Promise<void>;

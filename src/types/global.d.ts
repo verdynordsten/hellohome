@@ -1,4 +1,3 @@
-// Global type declarations for browser polyfills
 declare global {
   interface Window {
     Buffer: typeof Buffer;

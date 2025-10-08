@@ -12,7 +12,6 @@ import {
   deleteUnit as apiDeleteUnit
 } from '../services/api';
 
-// Helper function to convert Drizzle unit to our Unit type
 const _mapDrizzleUnit = (drizzleUnit: {
   id: string;
   locationId: string;
@@ -63,13 +62,11 @@ export const useUnitStore = create<UnitState>((set, _get) => ({
   unitsByLocation: {},
   isLoading: false,
   error: null,
-  // Pagination state
   currentPage: 1,
   totalPages: 1,
   totalUnits: 0,
   unitsPerPage: 10,
   searchQuery: "",
-  // Sorting state
   sortBy: "createdAt",
   sortOrder: "desc" as 'asc' | 'desc',
 
@@ -84,7 +81,6 @@ export const useUnitStore = create<UnitState>((set, _get) => ({
       
       const response = await apiFetchUnits({ page, limit, search, sortBy, sortOrder });
       
-      // Group units by location
       const unitsByLocation: Record<string, Unit[]> = {};
       response.units.forEach((unit) => {
         if (!unitsByLocation[unit.location_id]) {
@@ -111,13 +107,11 @@ export const useUnitStore = create<UnitState>((set, _get) => ({
     }
   },
 
-  // Legacy function for backward compatibility
   fetchAllUnits: async () => {
     set({ isLoading: true, error: null });
     try {
       const units = await apiFetchAllUnits();
       
-      // Group units by location
       const unitsByLocation: Record<string, Unit[]> = {};
       units.forEach((unit) => {
         if (!unitsByLocation[unit.location_id]) {
@@ -146,7 +140,6 @@ export const useUnitStore = create<UnitState>((set, _get) => ({
     try {
       const response = await apiFetchUnitsByLocationIdPaginated(locationId, params);
       
-      // Update the store with the paginated results
       set((state) => ({
         ...state,
         units: response.units,
@@ -194,13 +187,11 @@ export const useUnitStore = create<UnitState>((set, _get) => ({
     try {
       const newUnit = await apiCreateUnit(unitData);
       
-      // Update the units array with the new unit
       set((state) => ({
         units: [...state.units, newUnit],
         isLoading: false,
       }));
       
-      // Update unitsByLocation if needed
       if (newUnit.location_id) {
         set((state) => ({
           unitsByLocation: {
@@ -226,7 +217,6 @@ export const useUnitStore = create<UnitState>((set, _get) => ({
     try {
       const updatedUnit = await apiUpdateUnit(id, unitData);
       
-      // Update the units array with the updated unit
       set((state) => ({
         units: state.units.map((unit) =>
           unit.id === id ? updatedUnit : unit
@@ -234,7 +224,6 @@ export const useUnitStore = create<UnitState>((set, _get) => ({
         isLoading: false,
       }));
       
-      // Update unitsByLocation if needed
       if (updatedUnit.location_id) {
         set((state) => ({
           unitsByLocation: {
@@ -259,16 +248,13 @@ export const useUnitStore = create<UnitState>((set, _get) => ({
       const success = await apiDeleteUnit(id);
       
       if (success) {
-        // Find the unit to get its location_id before removing it
         const unitToDelete = _get().units.find((unit) => unit.id === id);
-        
-        // Remove the unit from the units array
+
         set((state) => ({
           units: state.units.filter((unit) => unit.id !== id),
           isLoading: false,
         }));
         
-        // Remove the unit from unitsByLocation if needed
         if (unitToDelete?.location_id) {
           set((state) => ({
             unitsByLocation: {
@@ -296,7 +282,6 @@ export const useUnitStore = create<UnitState>((set, _get) => ({
 
   setSearchQuery: (query: string) => {
     set({ searchQuery: query, currentPage: 1 });
-    // Fetch units with new search parameters
     _get().fetchUnits({
       page: 1,
       limit: _get().unitsPerPage,
@@ -308,7 +293,6 @@ export const useUnitStore = create<UnitState>((set, _get) => ({
 
   setCurrentPage: (page: number) => {
     set({ currentPage: page });
-    // Fetch units with new page parameter
     _get().fetchUnits({
       page,
       limit: _get().unitsPerPage,
@@ -320,7 +304,6 @@ export const useUnitStore = create<UnitState>((set, _get) => ({
 
   setUnitsPerPage: (limit: number) => {
     set({ unitsPerPage: limit, currentPage: 1 });
-    // Fetch units with new limit parameter
     _get().fetchUnits({
       page: 1,
       limit,
@@ -332,7 +315,6 @@ export const useUnitStore = create<UnitState>((set, _get) => ({
 
   setSorting: (sortBy: string, sortOrder: 'asc' | 'desc') => {
     set({ sortBy, sortOrder, currentPage: 1 });
-    // Fetch units with new sorting parameters
     _get().fetchUnits({
       page: 1,
       limit: _get().unitsPerPage,

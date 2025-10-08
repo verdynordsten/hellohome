@@ -9,7 +9,6 @@ import {
   deleteLocation as apiDeleteLocation
 } from '../services/api';
 
-// Helper function to convert Drizzle location to our Location type
 const _mapDrizzleLocation = (drizzleLocation: {
   id: string;
   name: string;
@@ -30,7 +29,6 @@ const _mapDrizzleLocation = (drizzleLocation: {
   updated_at: drizzleLocation.updatedAt?.toISOString() || null,
 });
 
-// Error handling utility
 const handleStoreError = (error: unknown, message: string, setError: (error: string) => void): void => {
   console.error(message, error);
   setError(message);

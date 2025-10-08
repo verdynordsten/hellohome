@@ -18,7 +18,6 @@ const Auth = () => {
   const { isAuthenticated, login, checkAuth } = useAuthStore();
 
   useEffect(() => {
-    // Check if user is already logged in
     checkAuth().then(() => {
       if (isAuthenticated) {
         navigate("/admin");

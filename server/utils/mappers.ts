@@ -1,4 +1,3 @@
-// Helper function to convert Drizzle location to our Location type
 export const mapDrizzleLocation = (drizzleLocation: {
   id: string;
   name: string;
@@ -19,7 +18,6 @@ export const mapDrizzleLocation = (drizzleLocation: {
   updated_at: drizzleLocation.updatedAt?.toISOString() || null,
 });
 
-// Helper function to convert Drizzle unit to our Unit type
 export const mapDrizzleUnit = (drizzleUnit: {
   id: string;
   locationId: string;

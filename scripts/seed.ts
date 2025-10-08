@@ -8,7 +8,7 @@ import { config } from 'dotenv';
 config({ path: '.env.local' });
 
 // Connection string from environment variables
-const connectionString = process.env.VITE_DATABASE_URL;
+const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
   throw new Error('VITE_DATABASE_URL is not defined');

@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useLocationStore, useUnitStore } from "@/stores";
 import { Location, Unit } from "@/types";
+import { format } from "date-fns";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -22,6 +23,7 @@ import {
 
 const LocationUnits = () => {
   const { locationId: locationSlug } = useParams();
+  const [searchParams] = useSearchParams();
   const { fetchLocationBySlug, fetchLocationById } = useLocationStore();
   const {
     fetchUnitsByLocationIdPaginated,
@@ -40,23 +42,40 @@ const LocationUnits = () => {
   const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchInput, setSearchInput] = useState("");
+  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   
-  // Set a fixed units per page value
   useEffect(() => {
     if (unitsPerPage !== 9) {
-      // This will trigger a fetch with the correct limit
       setSorting(sortBy || 'price_per_night', sortOrder || 'asc');
     }
   }, [unitsPerPage, sortBy, sortOrder, setSorting]);
 
+  // Parse date range from URL parameters
+  useEffect(() => {
+    const fromParam = searchParams.get('from');
+    const toParam = searchParams.get('to');
+    
+    if (fromParam) {
+      setDateRange(prev => ({
+        ...prev,
+        from: new Date(fromParam)
+      }));
+    }
+    
+    if (toParam) {
+      setDateRange(prev => ({
+        ...prev,
+        to: new Date(toParam)
+      }));
+    }
+  }, [searchParams]);
+
   const fetchLocationAndUnits = useCallback(async () => {
     setLoading(true);
     try {
-      // Try to fetch by slug first, then by id
       let locationData = await fetchLocationBySlug(locationSlug);
       
       if (!locationData) {
-        // If not found by slug, try by id
         locationData = await fetchLocationById(locationSlug);
       }
 
@@ -66,23 +85,21 @@ const LocationUnits = () => {
       }
       setLocation(locationData);
 
-      // Fetch units for this location with pagination and sorting
       const response = await fetchUnitsByLocationIdPaginated(locationData.id, {
         page: currentPage,
-        limit: 9, // Fixed limit of 9 units per page
+        limit: 9,
         search: searchQuery,
         sortBy: sortBy || 'price_per_night',
         sortOrder: sortOrder || 'asc'
       });
       
-      // Set units from the response
       setUnits(response.units);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
-  }, [fetchLocationBySlug, fetchLocationById, fetchUnitsByLocationIdPaginated, currentPage, unitsPerPage, searchQuery, sortBy, sortOrder, locationSlug]);
+  }, [fetchLocationBySlug, fetchLocationById, fetchUnitsByLocationIdPaginated, currentPage, searchQuery, sortBy, sortOrder, locationSlug]);
 
   useEffect(() => {
     if (locationSlug) {
@@ -90,7 +107,6 @@ const LocationUnits = () => {
     }
   }, [locationSlug, fetchLocationAndUnits]);
 
-  // Handle search input with debounce
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchInput !== searchQuery) {
@@ -101,7 +117,6 @@ const LocationUnits = () => {
     return () => clearTimeout(timer);
   }, [searchInput, searchQuery, setSearchQuery]);
 
-  // Fetch units when pagination or sorting changes
   useEffect(() => {
     if (location) {
       fetchUnitsByLocationIdPaginated(location.id, {
@@ -111,7 +126,6 @@ const LocationUnits = () => {
         sortBy: sortBy || 'price_per_night',
         sortOrder: sortOrder || 'asc'
       }).then((response) => {
-        // Set units from the response
         setUnits(response.units);
       });
     }
@@ -119,10 +133,8 @@ const LocationUnits = () => {
 
   const _handleSort = (column: string) => {
     if (sortBy === column) {
-      // Toggle sort order if same column
       setSorting(column, sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
-      // Set new column with default asc order
       setSorting(column, 'asc');
     }
   };
@@ -177,6 +189,17 @@ const LocationUnits = () => {
                 {location.name}
               </p>
               <p className="text-muted-foreground max-w-3xl">{location.description}</p>
+              
+              {/* Display selected date range if available */}
+              {dateRange.from && (
+                <div className="mt-4 p-3 bg-background rounded-lg border">
+                  <p className="text-sm text-muted-foreground mb-1">Selected Dates:</p>
+                  <p className="font-medium">
+                    {format(dateRange.from, "dd MMM yyyy")}
+                    {dateRange.to && ` - ${format(dateRange.to, "dd MMM yyyy")}`}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -290,7 +313,6 @@ const LocationUnits = () => {
                   </PaginationItem>
                   
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                    // Show first page, last page, current page, and pages around current page
                     if (
                       page === 1 ||
                       page === totalPages ||
@@ -309,7 +331,6 @@ const LocationUnits = () => {
                       );
                     }
                     
-                    // Show ellipsis for gaps
                     if (
                       (page === 2 && currentPage > 3) ||
                       (page === totalPages - 1 && currentPage < totalPages - 2)

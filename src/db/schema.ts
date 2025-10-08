@@ -1,9 +1,7 @@
 import { pgTable, uuid, text, numeric, boolean, timestamp, pgEnum } from 'drizzle-orm/pg-core';
 
-// Enums
 export const appRoleEnum = pgEnum('app_role', ['admin', 'user']);
 
-// Tables
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
   email: text('email').notNull().unique(),
@@ -55,7 +53,6 @@ export const userRoles = pgTable('user_roles', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
-// Types for TypeScript
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Location = typeof locations.$inferSelect;

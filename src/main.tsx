@@ -1,4 +1,3 @@
-// Import polyfills FIRST before anything else
 import './polyfills/buffer';
 import './polyfills/process';
 

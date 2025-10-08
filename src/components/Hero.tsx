@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
-// Constants
 const HERO_TITLE = "Your Premium Home in Jakarta";
 const HERO_DESCRIPTION = "Experience the comfort of living in Jakarta's best apartments with complete facilities and strategic locations. Unforgettable stay experiences await you.";
 const BACKGROUND_IMAGE_URL = "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80";

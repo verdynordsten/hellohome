@@ -81,7 +81,7 @@ export const AdminUnits = () => {
     if (locations.length === 0) {
       fetchLocations();
     }
-  }, [fetchUnits, fetchLocations, locations.length]);
+  }, [fetchUnits, fetchLocations, locations.length, currentPage, unitsPerPage, searchQuery, sortBy, sortOrder]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -283,10 +283,8 @@ export const AdminUnits = () => {
 
   const handleSort = (column: string) => {
     if (sortBy === column) {
-      // Toggle sort order if same column
       setSorting(column, sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
-      // Set new column with default asc order
       setSorting(column, 'asc');
     }
   };
@@ -762,7 +760,6 @@ export const AdminUnits = () => {
                   </PaginationItem>
                   
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                    // Show first page, last page, current page, and pages around current page
                     if (
                       page === 1 ||
                       page === totalPages ||
@@ -781,7 +778,6 @@ export const AdminUnits = () => {
                       );
                     }
                     
-                    // Show ellipsis for gaps
                     if (
                       (page === 2 && currentPage > 3) ||
                       (page === totalPages - 1 && currentPage < totalPages - 2)

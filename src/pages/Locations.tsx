@@ -15,7 +15,6 @@ const Locations = () => {
     }
   }, [fetchLocations, locations.length]);
   
-  // Sort locations by name
   const sortedLocations = [...locations].sort((a, b) => a.name.localeCompare(b.name));
 
   if (isLoading) {

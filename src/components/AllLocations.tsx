@@ -15,7 +15,6 @@ const AllLocations = () => {
     }
   }, [fetchLocations, locations.length]);
   
-  // Randomly shuffle and select 4 locations
   const shuffled = [...locations].sort(() => Math.random() - 0.5);
   const displayLocations = shuffled.slice(0, 4);
 

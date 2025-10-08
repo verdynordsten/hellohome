@@ -57,19 +57,16 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <span className="text-2xl font-bold text-primary">
               HelloHome
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {renderNavLinks()}
           </div>
 
-          {/* Language & Book Now */}
           <div className="hidden md:flex items-center space-x-4">
             {renderLanguageToggle()}
             <Button
@@ -83,7 +80,6 @@ const Navbar = () => {
             </Button>
           </div>
 
-          {/* Mobile Menu Button */}
           <button
             className="md:hidden"
             onClick={toggleMobileMenu}
@@ -93,7 +89,6 @@ const Navbar = () => {
           </button>
         </div>
 
-        {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 space-y-4">
             {renderNavLinks(true)}
