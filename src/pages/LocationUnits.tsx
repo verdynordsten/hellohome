@@ -50,7 +50,6 @@ const LocationUnits = () => {
     }
   }, [unitsPerPage, sortBy, sortOrder, setSorting]);
 
-  // Parse date range from URL parameters
   useEffect(() => {
     const fromParam = searchParams.get('from');
     const toParam = searchParams.get('to');
@@ -294,7 +293,7 @@ const LocationUnits = () => {
 
                 <CardFooter>
                   <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                    <Link to={`/unit/${unit.slug || unit.id}`}>View Details</Link>
+                    <Link to={`/location/${location.slug || location.id}/${unit.slug || unit.id}`}>View Details</Link>
                   </Button>
                 </CardFooter>
               </Card>

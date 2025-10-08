@@ -20,10 +20,10 @@ import { useToast } from "@/hooks/use-toast";
 import LocationMap from "@/components/LocationMap";
 
 const UnitDetail = () => {
-  const { id } = useParams();
+  const { id, locationId, unitSlug } = useParams();
   const { toast } = useToast();
   const { fetchUnitBySlug, fetchUnitById } = useUnitStore();
-  const { fetchLocationById } = useLocationStore();
+  const { fetchLocationById, fetchLocationBySlug } = useLocationStore();
   const [unit, setUnit] = useState<Unit | null>(null);
   const [location, setLocation] = useState<Location | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,34 +34,61 @@ const UnitDetail = () => {
 
   const fetchUnitDetails = useCallback(async () => {
     try {
-      let unitData = await fetchUnitBySlug(id);
+      let unitData = null;
+      let locationData = null;
       
-      if (!unitData) {
-        unitData = await fetchUnitById(id);
+      // Handle new URL structure: /location/:locationId/:unitSlug
+      if (locationId && unitSlug) {
+        // First get the location data
+        locationData = await fetchLocationBySlug(locationId) || await fetchLocationById(locationId);
+        
+        if (locationData) {
+          // Then find the unit by slug within this location
+          unitData = await fetchUnitBySlug(unitSlug);
+          
+          // Make sure the unit belongs to this location
+          if (unitData && unitData.location_id !== locationData.id) {
+            unitData = null;
+          }
+        }
+      } else if (id) {
+        // Handle old URL structure for backward compatibility: /unit/:id
+        unitData = await fetchUnitBySlug(id);
+        
+        if (!unitData) {
+          unitData = await fetchUnitById(id);
+        }
+        
+        if (unitData && unitData.location_id) {
+          locationData = await fetchLocationById(unitData.location_id);
+        }
       }
       
       if (!unitData) {
         setLoading(false);
         return;
       }
+      
       setUnit(unitData);
-
-      if (unitData.location_id) {
-        const locationData = await fetchLocationById(unitData.location_id);
-        if (locationData) setLocation(locationData);
+      
+      if (locationData) {
+        setLocation(locationData);
+      } else if (unitData.location_id) {
+        const fallbackLocationData = await fetchLocationById(unitData.location_id);
+        if (fallbackLocationData) setLocation(fallbackLocationData);
       }
     } catch (error) {
       console.error("Error fetching unit:", error);
     } finally {
       setLoading(false);
     }
-  }, [fetchUnitBySlug, fetchUnitById, fetchLocationById, id]);
+  }, [fetchUnitBySlug, fetchUnitById, fetchLocationById, fetchLocationBySlug, id, locationId, unitSlug]);
 
   useEffect(() => {
-    if (id) {
+    if (id || (locationId && unitSlug)) {
       fetchUnitDetails();
     }
-  }, [id, fetchUnitDetails]);
+  }, [id, locationId, unitSlug, fetchUnitDetails]);
 
   const unitImages = unit?.images && unit.images.length > 0 
     ? unit.images 
@@ -152,38 +179,38 @@ const UnitDetail = () => {
       <Navbar />
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4">
-          <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-            <Link to="/" className="hover:text-primary transition-colors">
+          <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-4 overflow-x-auto whitespace-nowrap pb-1">
+            <Link to="/" className="hover:text-primary transition-colors flex-shrink-0">
               Home
             </Link>
-            <ChevronRight className="h-4 w-4" />
-            <Link to="/locations" className="hover:text-primary transition-colors">
+            <ChevronRight className="h-4 w-4 flex-shrink-0" />
+            <Link to="/locations" className="hover:text-primary transition-colors flex-shrink-0">
               Locations
             </Link>
             {location && (
               <>
-                <ChevronRight className="h-4 w-4" />
-                <Link 
+                <ChevronRight className="h-4 w-4 flex-shrink-0" />
+                <Link
                   to={`/locations/${location.slug || location.id}`}
-                  className="hover:text-primary transition-colors"
+                  className="hover:text-primary transition-colors max-w-[120px] sm:max-w-none truncate"
                 >
                   {location.name}
                 </Link>
               </>
             )}
-            <ChevronRight className="h-4 w-4" />
-            <span className="text-foreground font-medium">
+            <ChevronRight className="h-4 w-4 flex-shrink-0" />
+            <span className="text-foreground font-medium max-w-[120px] sm:max-w-none truncate">
               {unit.name || unit.unit_name || unit.type}
             </span>
           </nav>
 
           {location && (
-            <Link 
+            <Link
               to={`/locations/${location.slug || location.id}`}
               className="inline-flex items-center gap-2 text-foreground hover:text-primary transition-colors mb-6 text-base"
             >
               <ArrowLeft className="h-5 w-5" />
-              <span>Back to {location.name}</span>
+              <span className="max-w-[200px] sm:max-w-none truncate">Back to {location.name}</span>
             </Link>
           )}
           

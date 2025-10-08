@@ -31,7 +31,6 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
   const jsonResponse = await response.json();
-  // Extract data from the API response format { success, message, data }
   return jsonResponse.data as T;
 };
 

@@ -40,7 +40,6 @@ const SearchSection = () => {
     return date < today;
   };
 
-  // Fetch locations on component mount
   useEffect(() => {
     if (locations.length === 0) {
       fetchLocations();
@@ -52,14 +51,12 @@ const SearchSection = () => {
       return;
     }
     
-    // Find the selected location to get the correct slug or ID
     const location = locations.find(loc => loc.slug === selectedLocation || loc.id === selectedLocation);
     
     if (!location) {
       return;
     }
     
-    // Build URL with date range parameters if available
     let url = `/locations/${location.slug || location.id}`;
     const params = new URLSearchParams();
     
@@ -75,7 +72,6 @@ const SearchSection = () => {
       url += `?${params.toString()}`;
     }
     
-    // Navigate to the location units page with the selected location and date range
     navigate(url);
   };
 

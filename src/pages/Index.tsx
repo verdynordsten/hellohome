@@ -4,11 +4,11 @@ import SearchSection from "@/components/SearchSection";
 import AllLocations from "@/components/AllLocations";
 import FeaturedUnits from "@/components/FeaturedUnits";
 import LocationsOverview from "@/components/LocationsOverview";
-import Facilities from "@/components/Facilities";
 import WhyChooseUs from "@/components/WhyChooseUs";
 import Testimonials from "@/components/Testimonials";
 import CTASection from "@/components/CTASection";
 import Footer from "@/components/Footer";
+import SmoothScrollWrapper from "@/components/SmoothScrollWrapper";
 
 const Index = () => {
   return (
@@ -16,14 +16,15 @@ const Index = () => {
       <Navbar />
       <Hero />
       <SearchSection />
-      <AllLocations />
-      <FeaturedUnits />
-      <LocationsOverview />
-      <Facilities />
-      <WhyChooseUs />
-      <Testimonials />
-      <CTASection />
-      <Footer />
+      <SmoothScrollWrapper>
+        <AllLocations />
+        <FeaturedUnits />
+        <LocationsOverview />
+        <WhyChooseUs />
+        <Testimonials />
+        <CTASection />
+        <Footer />
+      </SmoothScrollWrapper>
     </div>
   );
 };

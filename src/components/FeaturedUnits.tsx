@@ -1,19 +1,47 @@
-import { useEffect } from "react";
-import { useUnitStore } from "@/stores";
+import { useEffect, useState } from "react";
+import { useUnitStore, useLocationStore } from "@/stores";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Layers } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Location } from "@/types";
 
 const FeaturedUnits = () => {
   const { units, isLoading, fetchUnits } = useUnitStore();
+  const { fetchLocationById } = useLocationStore();
+  const [unitLocations, setUnitLocations] = useState<Record<string, Location>>({});
 
   useEffect(() => {
     if (units.length === 0) {
       fetchUnits();
     }
   }, [fetchUnits, units.length]);
+
+  useEffect(() => {
+    const fetchLocationsForUnits = async () => {
+      const locationMap: Record<string, Location> = {};
+      
+      for (const unit of units) {
+        if (unit.location_id && !locationMap[unit.id]) {
+          try {
+            const location = await fetchLocationById(unit.location_id);
+            if (location) {
+              locationMap[unit.id] = location;
+            }
+          } catch (error) {
+            console.error(`Error fetching location for unit ${unit.id}:`, error);
+          }
+        }
+      }
+      
+      setUnitLocations(locationMap);
+    };
+
+    if (units.length > 0) {
+      fetchLocationsForUnits();
+    }
+  }, [units, fetchLocationById]);
   
   const featuredUnits = units
     .filter(unit => unit.available)
@@ -78,7 +106,13 @@ const FeaturedUnits = () => {
 
               <CardFooter>
                 <Button asChild className="w-full bg-primary hover:bg-primary/90">
-                  <Link to={`/unit/${unit.slug || unit.id}`}>View Details & Book</Link>
+                  <Link to={
+                    unitLocations[unit.id]
+                      ? `/location/${unitLocations[unit.id].slug || unitLocations[unit.id].id}/${unit.slug || unit.id}`
+                      : `/unit/${unit.slug || unit.id}`
+                  }>
+                    View Details & Book
+                  </Link>
                 </Button>
               </CardFooter>
             </Card>
