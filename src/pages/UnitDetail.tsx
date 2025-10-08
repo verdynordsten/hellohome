@@ -37,22 +37,17 @@ const UnitDetail = () => {
       let unitData = null;
       let locationData = null;
       
-      // Handle new URL structure: /location/:locationId/:unitSlug
       if (locationId && unitSlug) {
-        // First get the location data
         locationData = await fetchLocationBySlug(locationId) || await fetchLocationById(locationId);
         
         if (locationData) {
-          // Then find the unit by slug within this location
           unitData = await fetchUnitBySlug(unitSlug);
           
-          // Make sure the unit belongs to this location
           if (unitData && unitData.location_id !== locationData.id) {
             unitData = null;
           }
         }
       } else if (id) {
-        // Handle old URL structure for backward compatibility: /unit/:id
         unitData = await fetchUnitBySlug(id);
         
         if (!unitData) {

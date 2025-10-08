@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useUnitStore, useLocationStore } from "@/stores";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Building2, Layers } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Location } from "@/types";
+import ImageCarousel from "@/components/ui/ImageCarousel";
 
 const FeaturedUnits = () => {
   const { units, isLoading, fetchUnits } = useUnitStore();
@@ -69,12 +70,12 @@ const FeaturedUnits = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {featuredUnits.map((unit) => (
-            <Card key={unit.id} className="overflow-hidden hover:shadow-card-hover transition-all duration-300 group">
-              <div className="relative overflow-hidden">
-                <img
-                  src={unit.image_url || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800"}
-                  alt={unit.unit_name || unit.type}
-                  className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
+            <Card key={unit.id} className="overflow-hidden hover:shadow-card-hover transition-all duration-300 group flex flex-col h-full">
+              <div className="relative h-64">
+                <ImageCarousel
+                  images={unit.images || [unit.image_url].filter(Boolean)}
+                  alt={unit.name || unit.unit_name || `${unit.type} Unit`}
+                  className="w-full h-full"
                 />
                 <div className="absolute top-4 left-4 flex gap-2">
                   <Badge variant="secondary" className="bg-primary/90 text-primary-foreground">
@@ -90,11 +91,11 @@ const FeaturedUnits = () => {
                 </div>
               </div>
 
-              <CardHeader>
-                <h3 className="text-xl font-bold">{unit.name || unit.unit_name || `${unit.type} Unit`}</h3>
+              <CardHeader className="flex-1">
+                <h3 className="text-xl font-bold line-clamp-2">{unit.name || unit.unit_name || `${unit.type} Unit`}</h3>
               </CardHeader>
 
-              <CardContent>
+              <CardContent className="flex-1">
                 <div className="flex flex-wrap gap-2">
                   {unit.features?.slice(0, 3).map((feature, idx) => (
                     <Badge key={idx} variant="outline">

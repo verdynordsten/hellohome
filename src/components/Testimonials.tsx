@@ -53,11 +53,11 @@ const Testimonials = () => {
     if (!slider) return;
 
     let animationId: number;
-    let position = slider.scrollWidth / 2; // Start from the middle
+    let position = slider.scrollWidth / 2;
 
     const animate = () => {
       if (slider) {
-        position -= 0.3; // Slow speed moving left
+        position -= 0.3;
         if (position <= 0) {
           position = slider.scrollWidth / 2;
         }

@@ -67,8 +67,8 @@ export const useUnitStore = create<UnitState>((set, _get) => ({
   totalUnits: 0,
   unitsPerPage: 10,
   searchQuery: "",
-  sortBy: "createdAt",
-  sortOrder: "desc" as 'asc' | 'desc',
+  sortBy: "price_per_night",
+  sortOrder: "asc" as 'asc' | 'desc',
 
   fetchUnits: async (params?: { page?: number; limit?: number; search?: string; sortBy?: string; sortOrder?: 'asc' | 'desc' }) => {
     set({ isLoading: true, error: null });
@@ -286,7 +286,7 @@ export const useUnitStore = create<UnitState>((set, _get) => ({
       page: 1,
       limit: _get().unitsPerPage,
       search: query,
-      sortBy: _get().sortBy,
+      sortBy: 'price_per_night',
       sortOrder: _get().sortOrder
     });
   },
@@ -297,7 +297,7 @@ export const useUnitStore = create<UnitState>((set, _get) => ({
       page,
       limit: _get().unitsPerPage,
       search: _get().searchQuery,
-      sortBy: _get().sortBy,
+      sortBy: 'price_per_night',
       sortOrder: _get().sortOrder
     });
   },
@@ -308,18 +308,18 @@ export const useUnitStore = create<UnitState>((set, _get) => ({
       page: 1,
       limit,
       search: _get().searchQuery,
-      sortBy: _get().sortBy,
+      sortBy: 'price_per_night',
       sortOrder: _get().sortOrder
     });
   },
 
   setSorting: (sortBy: string, sortOrder: 'asc' | 'desc') => {
-    set({ sortBy, sortOrder, currentPage: 1 });
+    set({ sortBy: 'price_per_night', sortOrder, currentPage: 1 });
     _get().fetchUnits({
       page: 1,
       limit: _get().unitsPerPage,
       search: _get().searchQuery,
-      sortBy,
+      sortBy: 'price_per_night',
       sortOrder
     });
   },

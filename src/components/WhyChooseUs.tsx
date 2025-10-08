@@ -62,7 +62,7 @@ const WhyChooseUs = () => {
 
     const animate = () => {
       if (slider) {
-        position += 0.3; // Slow speed
+        position += 0.3; 
         if (position >= slider.scrollWidth / 2) {
           position = 0;
         }

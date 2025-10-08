@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { MapPin, Search, ArrowUp, ArrowDown } from "lucide-react";
 import {
   Pagination,
   PaginationContent,
@@ -20,6 +20,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import ImageCarousel from "@/components/ui/ImageCarousel";
 
 const LocationUnits = () => {
   const { locationId: locationSlug } = useParams();
@@ -46,9 +47,9 @@ const LocationUnits = () => {
   
   useEffect(() => {
     if (unitsPerPage !== 9) {
-      setSorting(sortBy || 'price_per_night', sortOrder || 'asc');
+      setSorting('price_per_night', sortOrder || 'asc');
     }
-  }, [unitsPerPage, sortBy, sortOrder, setSorting]);
+  }, [unitsPerPage, sortOrder, setSorting]);
 
   useEffect(() => {
     const fromParam = searchParams.get('from');
@@ -83,22 +84,11 @@ const LocationUnits = () => {
         return;
       }
       setLocation(locationData);
-
-      const response = await fetchUnitsByLocationIdPaginated(locationData.id, {
-        page: currentPage,
-        limit: 9,
-        search: searchQuery,
-        sortBy: sortBy || 'price_per_night',
-        sortOrder: sortOrder || 'asc'
-      });
-      
-      setUnits(response.units);
     } catch (error) {
-      console.error("Error fetching data:", error);
-    } finally {
+      console.error("Error fetching location:", error);
       setLoading(false);
     }
-  }, [fetchLocationBySlug, fetchLocationById, fetchUnitsByLocationIdPaginated, currentPage, searchQuery, sortBy, sortOrder, locationSlug]);
+  }, [fetchLocationBySlug, fetchLocationById, locationSlug]);
 
   useEffect(() => {
     if (locationSlug) {
@@ -118,30 +108,28 @@ const LocationUnits = () => {
 
   useEffect(() => {
     if (location) {
+      setLoading(true);
       fetchUnitsByLocationIdPaginated(location.id, {
         page: currentPage,
-        limit: 9, // Fixed limit of 9 units per page
+        limit: 9,
         search: searchQuery,
-        sortBy: sortBy || 'price_per_night',
+        sortBy: 'price_per_night',
         sortOrder: sortOrder || 'asc'
       }).then((response) => {
         setUnits(response.units);
+        setLoading(false);
+      }).catch((error) => {
+        console.error("Error fetching units:", error);
+        setLoading(false);
       });
     }
   }, [currentPage, searchQuery, sortBy, sortOrder, fetchUnitsByLocationIdPaginated, location]);
 
-  const _handleSort = (column: string) => {
-    if (sortBy === column) {
-      setSorting(column, sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSorting(column, 'asc');
-    }
+  const _handleSort = () => {
+    setSorting('price_per_night', sortOrder === 'asc' ? 'desc' : 'asc');
   };
 
-  const _getSortIcon = (column: string) => {
-    if (sortBy !== column) {
-      return <ArrowUpDown className="ml-2 h-4 w-4" />;
-    }
+  const _getSortIcon = () => {
     return sortOrder === 'asc'
       ? <ArrowUp className="ml-2 h-4 w-4" />
       : <ArrowDown className="ml-2 h-4 w-4" />;
@@ -219,27 +207,15 @@ const LocationUnits = () => {
                 />
               </div>
               <Select
-                value={sortBy || 'price_per_night'}
-                onValueChange={(value) => setSorting(value, sortOrder || 'asc')}
+                value={sortOrder || 'asc'}
+                onValueChange={(value: 'asc' | 'desc') => setSorting('price_per_night', value)}
               >
                 <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Sort by" />
+                  <SelectValue placeholder="Sort by price" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="price_per_night">Price/Night</SelectItem>
-                  <SelectItem value="price_per_month">Price/Month</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select
-                value={sortOrder || 'asc'}
-                onValueChange={(value: 'asc' | 'desc') => setSorting(sortBy || 'price_per_night', value)}
-              >
-                <SelectTrigger className="w-full sm:w-32">
-                  <SelectValue placeholder="Order" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="asc">Low to High</SelectItem>
-                  <SelectItem value="desc">High to Low</SelectItem>
+                  <SelectItem value="asc">Price: Low to High</SelectItem>
+                  <SelectItem value="desc">Price: High to Low</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -251,12 +227,12 @@ const LocationUnits = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {units.map((unit) => (
-              <Card key={unit.id} className="overflow-hidden hover:shadow-card-hover transition-all group">
-                <div className="relative overflow-hidden h-48">
-                  <img
-                    src={unit.image_url || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800"}
-                    alt={unit.unit_name || unit.type}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+              <Card key={unit.id} className="overflow-hidden hover:shadow-card-hover transition-all group flex flex-col h-full">
+                <div className="relative h-48">
+                  <ImageCarousel
+                    images={unit.images || [unit.image_url].filter(Boolean)}
+                    alt={unit.name || unit.unit_name || `${unit.type} Unit`}
+                    className="w-full h-full"
                   />
                   <Badge className="absolute top-4 left-4 bg-primary/90 text-primary-foreground">
                     {unit.type}
@@ -268,15 +244,15 @@ const LocationUnits = () => {
                   )}
                 </div>
 
-                <CardHeader>
-                  <h3 className="text-xl font-bold">{unit.name || unit.unit_name || `${unit.type} Unit`}</h3>
+                <CardHeader className="flex-1">
+                  <h3 className="text-xl font-bold line-clamp-2">{unit.name || unit.unit_name || `${unit.type} Unit`}</h3>
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <span>Floor {unit.floor || "N/A"}</span>
                     <span>{unit.view || "City View"}</span>
                   </div>
                 </CardHeader>
 
-                <CardContent>
+                <CardContent className="flex-1">
                   <div className="flex flex-wrap gap-2 mb-3">
                     {unit.features?.slice(0, 4).map((feature, idx) => (
                       <Badge key={idx} variant="secondary" className="rounded-full">
@@ -320,9 +296,9 @@ const LocationUnits = () => {
                       return (
                         <PaginationItem key={page}>
                           <PaginationLink
-                            onClick={() => setCurrentPage(page)}
+                            onClick={() => page !== currentPage && setCurrentPage(page)}
                             isActive={page === currentPage}
-                            className="cursor-pointer"
+                            className={page === currentPage ? "pointer-events-none" : "cursor-pointer"}
                           >
                             {page}
                           </PaginationLink>
