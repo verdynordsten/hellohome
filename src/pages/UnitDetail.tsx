@@ -209,64 +209,77 @@ const UnitDetail = () => {
             </Link>
           )}
           
-          <div className="space-y-4 mb-8">
-            <div className="relative h-[400px] rounded-xl overflow-hidden group">
-              <div className="relative w-full h-full">
-                {unitImages.map((image, index) => (
-                  <img
-                    key={index}
-                    src={image}
-                    alt={`${unit.name || unit.unit_name || unit.type} view ${index + 1}`}
-                    className={cn(
-                      "absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-in-out",
-                      selectedImage === index
-                        ? "opacity-100 scale-100"
-                        : "opacity-0 scale-105"
-                    )}
-                  />
-                ))}
-              </div>
-              <Badge className="absolute top-4 left-4 bg-primary z-10">
-                {unit.type}
-              </Badge>
-              {!unit.available && (
-                <Badge className="absolute top-4 right-20 bg-destructive z-10">
-                  Rented
-                </Badge>
-              )}
-              
-              <div className="absolute bottom-4 right-4 bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full text-sm z-10">
-                {selectedImage + 1} / {unitImages.length}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-7 gap-2">
-              {unitImages.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleImageSelect(index)}
-                  className={cn(
-                    "relative aspect-video rounded-lg overflow-hidden transition-all duration-300 hover-scale",
-                    selectedImage === index
-                      ? "ring-2 ring-primary scale-105 shadow-lg"
-                      : "opacity-70 hover:opacity-100"
-                  )}
-                >
-                  <img
-                    src={image}
-                    alt={`Thumbnail ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                  {selectedImage === index && (
-                    <div className="absolute inset-0 bg-primary/20" />
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
+              <div className="space-y-4">
+                <div className="relative h-[400px] rounded-xl overflow-hidden group">
+                  <div className="relative w-full h-full">
+                    {unitImages.map((image, index) => (
+                      <img
+                        key={index}
+                        src={image}
+                        alt={`${unit.name || unit.unit_name || unit.type} view ${index + 1}`}
+                        className={cn(
+                          "absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-in-out cursor-pointer",
+                          selectedImage === index
+                            ? "opacity-100 scale-100"
+                            : "opacity-0 scale-105"
+                        )}
+                        onClick={() => handleImageSelect(index)}
+                      />
+                    ))}
+                  </div>
+                  <Badge className="absolute top-4 left-4 bg-primary z-10">
+                    {unit.type}
+                  </Badge>
+                  
+                  <div className="absolute bottom-4 right-4 bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full text-sm z-10">
+                    {selectedImage + 1} / {unitImages.length}
+                  </div>
+                  
+                  <button
+                    onClick={() => handleImageSelect((selectedImage - 1 + unitImages.length) % unitImages.length)}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => handleImageSelect((selectedImage + 1) % unitImages.length)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-7 gap-2">
+                  {unitImages.map((image, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleImageSelect(index)}
+                      className={cn(
+                        "relative aspect-video rounded-lg overflow-hidden transition-all duration-300 hover:scale-105",
+                        selectedImage === index
+                          ? "ring-2 ring-primary scale-105 shadow-lg"
+                          : "opacity-70 hover:opacity-100"
+                      )}
+                    >
+                      <img
+                        src={image}
+                        alt={`Thumbnail ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      {selectedImage === index && (
+                        <div className="absolute inset-0 bg-primary/20" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div>
                 <div className="flex items-center gap-2 mb-4">
                   <Badge className="bg-primary">{unit.type}</Badge>
@@ -304,8 +317,8 @@ const UnitDetail = () => {
 
               <div>
                 <h2 className="text-2xl font-semibold mb-4">Location</h2>
-                <LocationMap 
-                  locationName={location?.name || unit.building || "Location"} 
+                <LocationMap
+                  locationName={location?.name || unit.building || "Location"}
                   embedUrl={unit.map_embed_url}
                 />
               </div>
@@ -387,8 +400,8 @@ const UnitDetail = () => {
                   </div>
 
                   <div className="space-y-3">
-                    <Button 
-                      className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" 
+                    <Button
+                      className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
                       size="lg"
                       onClick={() => setShowBookingForm(true)}
                     >

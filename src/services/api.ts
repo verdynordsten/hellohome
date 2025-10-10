@@ -305,7 +305,7 @@ export const fetchUnitBySlug = async (slug: string): Promise<Unit | null> => {
   }
 };
 
-export const createUnit = async (unitData: {
+export const createUnit = async (unitData: FormData | {
   location_id: string;
   type: string;
   name?: string;
@@ -326,23 +326,31 @@ export const createUnit = async (unitData: {
 }): Promise<Unit> => {
   try {
     const token = getAuthToken();
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
+    const headers: Record<string, string> = {};
     
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
+    // Don't set Content-Type for FormData - browser will set it with boundary
+    if (!(unitData instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
+    
+    const body = unitData instanceof FormData ? unitData : JSON.stringify(unitData);
+    const locationId = unitData instanceof FormData ? unitData.get('location_id') : unitData.location_id;
+    
     const response = await fetch(buildApiUrl('/units'), {
       method: 'POST',
       headers,
-      body: JSON.stringify(unitData),
+      body,
     });
     const result = await handleResponse<Unit>(response);
     
     clearApiCache('/units');
-    clearApiCache(`/units/location/${unitData.location_id}`);
+    if (locationId) {
+      clearApiCache(`/units/location/${locationId}`);
+    }
     
     return result;
   } catch (error) {
@@ -369,28 +377,50 @@ export const updateUnit = async (id: string, unitData: {
   building?: string;
   tower?: string;
   map_embed_url?: string;
-}): Promise<Unit> => {
+} | FormData): Promise<Unit> => {
   try {
     const token = getAuthToken();
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
+    const headers: Record<string, string> = {};
     
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
+    // Don't set Content-Type for FormData - browser will set it with boundary
+    if (!(unitData instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
+    
+    const body = unitData instanceof FormData ? unitData : JSON.stringify(unitData);
     const response = await fetch(buildApiUrl(`/units/${id}`), {
       method: 'PUT',
       headers,
-      body: JSON.stringify(unitData),
+      body,
     });
-    const result = await handleResponse<Unit>(response);
     
+    if (!response.ok) {
+      const _errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const jsonResponse = await response.json();
+    const result = jsonResponse.data as Unit;
+    
+    // Clear all caches to ensure fresh data
     clearApiCache('/units');
     clearApiCache(`/units/${id}`);
-    if (unitData.location_id) {
-      clearApiCache(`/units/location/${unitData.location_id}`);
+    clearApiCache('/units/all');
+    
+    // Extract location_id from FormData if needed
+    let locationId: string | undefined;
+    if (unitData instanceof FormData) {
+      locationId = unitData.get('location_id') as string;
+    } else {
+      locationId = unitData.location_id;
+    }
+    
+    if (locationId) {
+      clearApiCache(`/units/location/${locationId}`);
     }
     
     return result;

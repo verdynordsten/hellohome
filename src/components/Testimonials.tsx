@@ -91,7 +91,6 @@ const Testimonials = () => {
             className="flex gap-8 overflow-hidden scrollbar-hide"
             style={{ scrollBehavior: 'auto' }}
           >
-            {/* Duplicate the testimonials array for infinite scroll effect */}
             {[...testimonials, ...testimonials].map((testimonial, idx) => (
               <div key={idx} className="flex-shrink-0 w-80">
                 <Card className="hover:shadow-card-hover transition-all duration-300 h-full">

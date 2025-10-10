@@ -34,7 +34,7 @@ export const units = pgTable('units', {
   pricePerMonth: numeric('price_per_month'),
   pricePerNight: numeric('price_per_night'),
   available: boolean('available').default(true),
-  imageUrl: text('image_url'),
+  imageUrl: text('image_url').default(null), // Set to null as requested
   images: text('images').array(),
   features: text('features').array(),
   view: text('view'),

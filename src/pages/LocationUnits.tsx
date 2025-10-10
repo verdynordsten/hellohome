@@ -205,7 +205,6 @@ const LocationUnits = () => {
               </p>
               <p className="text-muted-foreground max-w-3xl">{location.description}</p>
               
-              {/* Display selected date range if available */}
               {dateRange.from && (
                 <div className="mt-4 p-3 bg-background rounded-lg border">
                   <p className="text-sm text-muted-foreground mb-1">Selected Dates:</p>
@@ -253,50 +252,96 @@ const LocationUnits = () => {
             Showing {units.length} of {totalUnits} units
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {units.map((unit) => (
-              <Card key={unit.id} className="overflow-hidden hover:shadow-card-hover transition-all group flex flex-col h-full">
-                <div className="relative h-48">
-                  <ImageCarousel
-                    images={unit.images || [unit.image_url].filter(Boolean)}
-                    alt={unit.name || unit.unit_name || `${unit.type} Unit`}
-                    className="w-full h-full"
-                  />
-                  <Badge className="absolute top-4 left-4 bg-primary/90 text-primary-foreground">
-                    {unit.type}
-                  </Badge>
-                  {!unit.available && (
-                    <Badge className="absolute top-4 right-4 bg-destructive/90 text-destructive-foreground">
-                      Rented
+              <Card key={unit.id} className="overflow-hidden hover:shadow-2xl transition-all duration-500 group flex flex-col h-full border-0 shadow-lg">
+                <div className="relative h-72 overflow-hidden">
+                  <div className="relative w-full h-full">
+                    <ImageCarousel
+                      images={unit.images || [unit.image_url].filter(Boolean)}
+                      alt={unit.name || unit.unit_name || `${unit.type} Unit`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  
+                  <div className="absolute top-4 left-4 flex gap-2 z-10">
+                    <Badge className="bg-primary/90 text-primary-foreground backdrop-blur-sm border-0">
+                      {unit.type}
                     </Badge>
+                    {unit.floor && (
+                      <Badge className="bg-white/90 text-foreground backdrop-blur-sm border-0">
+                        🏢 Floor {unit.floor}
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  {unit.view && (
+                    <div className="absolute top-4 right-4 z-10">
+                      <Badge className="bg-white/90 text-foreground backdrop-blur-sm border-0">
+                        🌅 {unit.view}
+                      </Badge>
+                    </div>
                   )}
+                  
+                  {unit.price_per_night && (
+                    <div className="absolute bottom-4 left-4 z-10">
+                      <div className="bg-white/95 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg">
+                        <p className="text-lg font-bold text-primary">
+                          ${unit.price_per_night.toLocaleString()}
+                          <span className="text-xs font-normal text-muted-foreground">/night</span>
+                        </p>
+                        {unit.price_per_month && (
+                          <p className="text-xs text-muted-foreground">
+                            ${unit.price_per_month.toLocaleString()}/month
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="absolute bottom-4 right-4 z-10">
+                    {unit.available ? (
+                      <Badge className="bg-green-100 text-green-800 border-0">
+                        ✓ Available
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-red-100 text-red-800 border-0">
+                        ✗ Rented
+                      </Badge>
+                    )}
+                  </div>
                 </div>
 
-                <CardHeader className="flex-1">
-                  <h3 className="text-xl font-bold line-clamp-2">{unit.name || unit.unit_name || `${unit.type} Unit`}</h3>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>Floor {unit.floor || "N/A"}</span>
-                    <span>{unit.view || "City View"}</span>
+                <CardHeader className="flex-1 pb-3">
+                  <div className="flex justify-between items-start gap-2">
+                    <h3 className="text-xl font-bold line-clamp-2 group-hover:text-primary transition-colors">
+                      {unit.name || unit.unit_name || `${unit.type} Unit`}
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span>{unit.building || 'Building A'}</span>
+                    {unit.tower && <span>• {unit.tower}</span>}
                   </div>
                 </CardHeader>
 
-                <CardContent className="flex-1">
-                  <div className="flex flex-wrap gap-2 mb-3">
+                <CardContent className="flex-1 pb-3">
+                  <div className="flex flex-wrap gap-1.5 mb-3">
                     {unit.features?.slice(0, 4).map((feature, idx) => (
-                      <Badge key={idx} variant="secondary" className="rounded-full">
+                      <Badge key={idx} variant="outline" className="text-xs rounded-full px-2 py-1 bg-muted/50">
                         {feature}
                       </Badge>
                     ))}
                   </div>
-                  {unit.price_per_night && (
-                    <p className="text-lg font-bold text-primary">
-                      $ {unit.price_per_night.toLocaleString()}<span className="text-sm font-normal text-muted-foreground">/night</span>
+                  {unit.description && (
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {unit.description}
                     </p>
                   )}
                 </CardContent>
 
-                <CardFooter>
-                  <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                <CardFooter className="pt-0">
+                  <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground shadow-md hover:shadow-lg transition-all duration-300">
                     <Link to={`/location/${location.slug || location.id}/${unit.slug || unit.id}`}>View Details</Link>
                   </Button>
                 </CardFooter>

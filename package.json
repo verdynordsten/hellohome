@@ -19,6 +19,7 @@
     "dev:full": "concurrently \"npm run api\" \"npm run dev\""
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.907.0",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
@@ -52,7 +53,9 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0",
     "@types/pg": "^8.15.5",
+    "@types/uuid": "^10.0.0",
     "bcryptjs": "^3.0.2",
     "buffer": "^6.0.3",
     "class-variance-authority": "^0.7.1",
@@ -68,6 +71,7 @@
     "jsonwebtoken": "^9.0.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.462.0",
+    "multer": "^2.0.2",
     "next-themes": "^0.3.0",
     "postgres": "^3.4.7",
     "react": "^18.3.1",
@@ -77,9 +81,11 @@
     "react-resizable-panels": "^2.1.9",
     "react-router-dom": "^7.9.3",
     "recharts": "^2.15.4",
+    "sharp": "^0.34.4",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
+    "uuid": "^13.0.0",
     "vaul": "^0.9.9",
     "zod": "^3.25.76",
     "zustand": "^5.0.8"

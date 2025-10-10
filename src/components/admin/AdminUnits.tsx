@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useUnitStore, useLocationStore } from "@/stores";
-import { Unit, CreateUnitInput, UpdateUnitInput } from "@/types";
+import { Unit } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,6 +56,9 @@ export const AdminUnits = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [searchInput, setSearchInput] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [formData, setFormData] = useState({
     location_id: "",
     name: "",
@@ -68,10 +71,12 @@ export const AdminUnits = () => {
     view: "",
     description: "",
     features: "",
-    images: "",
-    image_url: "",
+    imageFiles: [] as File[],
+    existingImages: [] as string[],
+    imagesToDelete: [] as string[],
     price_per_month: "",
     price_per_night: "",
+    map_embed_url: "",
     available: true,
   });
   const { toast } = useToast();
@@ -104,38 +109,59 @@ export const AdminUnits = () => {
       const featuresArray = formData.features
         ? formData.features.split(",").map((f) => f.trim())
         : [];
-      
-      const imagesArray = formData.images
-        ? formData.images.split(",").map((img) => img.trim())
-        : [];
+
+      // Set uploading state
+      setIsUploading(true);
+      setUploadStatus('uploading');
+      setUploadProgress(0);
 
       if (editingUnit) {
-        const updateData: UpdateUnitInput = {
-          location_id: formData.location_id,
-          name: formData.name || undefined,
-          slug: formData.slug || undefined,
-          type: formData.type,
-          unit_name: formData.unit_name || undefined,
-          floor: formData.floor || undefined,
-          building: formData.building || undefined,
-          tower: formData.tower || undefined,
-          view: formData.view || undefined,
-          description: formData.description || undefined,
-          features: featuresArray,
-          images: imagesArray,
-          image_url: formData.image_url || undefined,
-          price_per_month: formData.price_per_month
-            ? parseFloat(formData.price_per_month)
-            : undefined,
-          price_per_night: formData.price_per_night
-            ? parseFloat(formData.price_per_night)
-            : undefined,
-          available: formData.available,
-        };
+        const formDataToSend = new FormData();
         
-        console.log('AdminUnits: Attempting to update unit with ID:', editingUnit.id, 'and data:', updateData);
-        const result = await updateUnit(editingUnit.id, updateData);
-        console.log('AdminUnits: Update result:', result);
+        // Add all form fields
+        formDataToSend.append('location_id', formData.location_id);
+        if (formData.name) formDataToSend.append('name', formData.name);
+        if (formData.slug) formDataToSend.append('slug', formData.slug);
+        formDataToSend.append('type', formData.type);
+        if (formData.unit_name) formDataToSend.append('unit_name', formData.unit_name);
+        if (formData.floor) formDataToSend.append('floor', formData.floor);
+        if (formData.building) formDataToSend.append('building', formData.building);
+        if (formData.tower) formDataToSend.append('tower', formData.tower);
+        if (formData.view) formDataToSend.append('view', formData.view);
+        if (formData.description) formDataToSend.append('description', formData.description);
+        if (featuresArray.length > 0) formDataToSend.append('features', JSON.stringify(featuresArray));
+        // Always send existing images for updates
+        formDataToSend.append('existing_images', JSON.stringify(formData.existingImages));
+        if (formData.imagesToDelete.length > 0) formDataToSend.append('images_to_delete', JSON.stringify(formData.imagesToDelete));
+        if (formData.price_per_month) formDataToSend.append('price_per_month', formData.price_per_month);
+        if (formData.price_per_night) formDataToSend.append('price_per_night', formData.price_per_night);
+        if (formData.map_embed_url) formDataToSend.append('map_embed_url', formData.map_embed_url);
+        // Ensure boolean is sent correctly
+        formDataToSend.append('available', formData.available ? 'true' : 'false');
+        
+        // Add image files
+        formData.imageFiles.forEach((file) => {
+          formDataToSend.append('images', file);
+        });
+        
+        // Simulate upload progress
+        if (formData.imageFiles.length > 0) {
+          const progressInterval = setInterval(() => {
+            setUploadProgress(prev => {
+              if (prev >= 90) {
+                clearInterval(progressInterval);
+                return 90;
+              }
+              return prev + 10;
+            });
+          }, 200);
+        }
+        
+        const result = await updateUnit(editingUnit.id, formDataToSend as FormData);
+        
+        // Set progress to 100% and status to success
+        setUploadProgress(100);
+        setUploadStatus('success');
         
         if (result) {
           toast({
@@ -146,30 +172,49 @@ export const AdminUnits = () => {
           throw new Error("Failed to update unit");
         }
       } else {
-        const createData: CreateUnitInput = {
-          location_id: formData.location_id,
-          name: formData.name || undefined,
-          slug: formData.slug || undefined,
-          type: formData.type,
-          unit_name: formData.unit_name || undefined,
-          floor: formData.floor || undefined,
-          building: formData.building || undefined,
-          tower: formData.tower || undefined,
-          view: formData.view || undefined,
-          description: formData.description || undefined,
-          features: featuresArray,
-          images: imagesArray,
-          image_url: formData.image_url || undefined,
-          price_per_month: formData.price_per_month
-            ? parseFloat(formData.price_per_month)
-            : undefined,
-          price_per_night: formData.price_per_night
-            ? parseFloat(formData.price_per_night)
-            : undefined,
-          available: formData.available,
-        };
+        const formDataToSend = new FormData();
         
-        const result = await createUnit(createData);
+        // Add all form fields
+        formDataToSend.append('location_id', formData.location_id);
+        if (formData.name) formDataToSend.append('name', formData.name);
+        if (formData.slug) formDataToSend.append('slug', formData.slug);
+        formDataToSend.append('type', formData.type);
+        if (formData.unit_name) formDataToSend.append('unit_name', formData.unit_name);
+        if (formData.floor) formDataToSend.append('floor', formData.floor);
+        if (formData.building) formDataToSend.append('building', formData.building);
+        if (formData.tower) formDataToSend.append('tower', formData.tower);
+        if (formData.view) formDataToSend.append('view', formData.view);
+        if (formData.description) formDataToSend.append('description', formData.description);
+        if (featuresArray.length > 0) formDataToSend.append('features', JSON.stringify(featuresArray));
+        if (formData.price_per_month) formDataToSend.append('price_per_month', formData.price_per_month);
+        if (formData.price_per_night) formDataToSend.append('price_per_night', formData.price_per_night);
+        if (formData.map_embed_url) formDataToSend.append('map_embed_url', formData.map_embed_url);
+        // Ensure boolean is sent correctly
+        formDataToSend.append('available', formData.available ? 'true' : 'false');
+        
+        // Add image files
+        formData.imageFiles.forEach((file) => {
+          formDataToSend.append('images', file);
+        });
+        
+        // Simulate upload progress
+        if (formData.imageFiles.length > 0) {
+          const progressInterval = setInterval(() => {
+            setUploadProgress(prev => {
+              if (prev >= 90) {
+                clearInterval(progressInterval);
+                return 90;
+              }
+              return prev + 10;
+            });
+          }, 200);
+        }
+        
+        const result = await createUnit(formDataToSend as FormData);
+        
+        // Set progress to 100% and status to success
+        setUploadProgress(100);
+        setUploadStatus('success');
         
         if (result) {
           toast({
@@ -180,6 +225,13 @@ export const AdminUnits = () => {
           throw new Error("Failed to create unit");
         }
       }
+
+      // Reset upload state after a short delay to show success status
+      setTimeout(() => {
+        setIsUploading(false);
+        setUploadStatus('idle');
+        setUploadProgress(0);
+      }, 1500);
 
       setDialogOpen(false);
       setFormData({
@@ -194,19 +246,31 @@ export const AdminUnits = () => {
         view: "",
         description: "",
         features: "",
-        images: "",
-        image_url: "",
+        imageFiles: [],
+        existingImages: [],
+        imagesToDelete: [],
         price_per_month: "",
         price_per_night: "",
+        map_embed_url: "",
         available: true,
       });
       setEditingUnit(null);
     } catch (error: unknown) {
+      // Set upload status to error
+      setUploadStatus('error');
+      setIsUploading(false);
+      
       toast({
         title: "Error",
         description: (error as Error).message,
         variant: "destructive",
       });
+      
+      // Reset upload state after error
+      setTimeout(() => {
+        setUploadStatus('idle');
+        setUploadProgress(0);
+      }, 3000);
     }
   };
 
@@ -224,10 +288,12 @@ export const AdminUnits = () => {
       view: unit.view || "",
       description: unit.description || "",
       features: unit.features?.join(", ") || "",
-      images: unit.images?.join(", ") || "",
-      image_url: unit.image_url || "",
+      imageFiles: [],
+      existingImages: unit.images || [],
+      imagesToDelete: [],
       price_per_month: unit.price_per_month?.toString() || "",
       price_per_night: unit.price_per_night?.toString() || "",
+      map_embed_url: unit.map_embed_url || "",
       available: unit.available,
     });
     setDialogOpen(true);
@@ -267,10 +333,12 @@ export const AdminUnits = () => {
       view: "",
       description: "",
       features: "",
-      images: "",
-      image_url: "",
+      imageFiles: [],
+      existingImages: [],
+      imagesToDelete: [],
       price_per_month: "",
       price_per_night: "",
+      map_embed_url: "",
       available: true,
     });
     setEditingUnit(null);
@@ -488,6 +556,21 @@ export const AdminUnits = () => {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="map_embed_url">Map Embed URL</Label>
+                <Input
+                  id="map_embed_url"
+                  value={formData.map_embed_url}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      map_embed_url: e.target.value,
+                    })
+                  }
+                  placeholder="e.g. https://maps.google.com/embed?..."
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
                 <Input
                   id="description"
@@ -514,29 +597,85 @@ export const AdminUnits = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="images">Images (comma-separated URLs)</Label>
+                <Label htmlFor="images">Images</Label>
                 <Input
                   id="images"
-                  value={formData.images}
-                  onChange={(e) =>
-                    setFormData({ ...formData, images: e.target.value })
-                  }
-                  placeholder="https://example.com/img1.jpg, https://example.com/img2.jpg"
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  disabled={isUploading}
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    setFormData({ ...formData, imageFiles: files });
+                  }}
                 />
+                <p className="text-sm text-muted-foreground">
+                  Upload multiple images (JPG, PNG, etc.)
+                </p>
+                
+                {isUploading && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Uploading images...</span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div
+                        className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out"
+                        style={{ width: `${uploadProgress}%` }}
+                      ></div>
+                    </div>
+                    {uploadStatus === 'success' && (
+                      <div className="flex items-center text-green-600 text-sm">
+                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        Upload completed successfully!
+                      </div>
+                    )}
+                    {uploadStatus === 'error' && (
+                      <div className="flex items-center text-red-600 text-sm">
+                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                        Upload failed. Please try again.
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="image_url">Main Image URL</Label>
-                <Input
-                  id="image_url"
-                  type="url"
-                  value={formData.image_url}
-                  onChange={(e) =>
-                    setFormData({ ...formData, image_url: e.target.value })
-                  }
-                  placeholder="https://example.com/unit.jpg"
-                />
-              </div>
+              {editingUnit && formData.existingImages.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Existing Images</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {formData.existingImages.map((imageUrl, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={imageUrl}
+                          alt={`Existing image ${index + 1}`}
+                          className="w-full h-24 object-cover rounded border"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newImagesToDelete = [...formData.imagesToDelete, imageUrl];
+                            const newExistingImages = formData.existingImages.filter(img => img !== imageUrl);
+                            setFormData({
+                              ...formData,
+                              imagesToDelete: newImagesToDelete,
+                              existingImages: newExistingImages
+                            });
+                          }}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center space-x-2">
                 <Checkbox
@@ -552,8 +691,17 @@ export const AdminUnits = () => {
                 <Label htmlFor="available">Available for rent</Label>
               </div>
 
-              <Button type="submit" className="w-full">
-                {editingUnit ? "Update Unit" : "Create Unit"}
+              <Button type="submit" className="w-full" disabled={isUploading}>
+                {isUploading ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
+                    {editingUnit ? "Updating..." : "Creating..."}
+                  </>
+                ) : (
+                  <>
+                    {editingUnit ? "Update Unit" : "Create Unit"}
+                  </>
+                )}
               </Button>
             </form>
           </DialogContent>

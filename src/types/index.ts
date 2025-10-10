@@ -98,6 +98,9 @@ export interface UpdateUnitInput {
   map_embed_url?: string;
 }
 
+// Add FormData type for file uploads
+export type UnitFormData = FormData;
+
 export interface ApiResponse<T> {
   data: T | null;
   error: string | null;

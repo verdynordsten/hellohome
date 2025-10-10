@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { UnitState, Unit, CreateUnitInput, UpdateUnitInput } from '../types';
+import { UnitState, Unit, CreateUnitInput, UpdateUnitInput, UnitFormData } from '../types';
 import {
   fetchUnits as apiFetchUnits,
   fetchAllUnits as apiFetchAllUnits,
@@ -182,7 +182,7 @@ export const useUnitStore = create<UnitState>((set, _get) => ({
     }
   },
 
-  createUnit: async (unitData: CreateUnitInput) => {
+  createUnit: async (unitData: CreateUnitInput | UnitFormData) => {
     set({ isLoading: true, error: null });
     try {
       const newUnit = await apiCreateUnit(unitData);
@@ -212,17 +212,29 @@ export const useUnitStore = create<UnitState>((set, _get) => ({
     }
   },
 
-  updateUnit: async (id: string, unitData: UpdateUnitInput) => {
+  updateUnit: async (id: string, unitData: UpdateUnitInput | UnitFormData) => {
     set({ isLoading: true, error: null });
     try {
       const updatedUnit = await apiUpdateUnit(id, unitData);
       
-      set((state) => ({
-        units: state.units.map((unit) =>
-          unit.id === id ? updatedUnit : unit
-        ),
-        isLoading: false,
-      }));
+      set((state) => {
+        return {
+          units: state.units.map((unit) =>
+            unit.id === id ? updatedUnit : unit
+          ),
+          isLoading: false,
+        };
+      });
+      
+      // After successful update, refresh the data from server to ensure we have the latest
+      const currentState = _get();
+      await _get().fetchUnits({
+        page: currentState.currentPage,
+        limit: currentState.unitsPerPage,
+        search: currentState.searchQuery,
+        sortBy: currentState.sortBy,
+        sortOrder: currentState.sortOrder
+      });
       
       if (updatedUnit.location_id) {
         set((state) => ({
@@ -236,7 +248,7 @@ export const useUnitStore = create<UnitState>((set, _get) => ({
       
       return updatedUnit;
     } catch (error) {
-      console.error('Failed to update unit:', error);
+      console.error('Store: Failed to update unit:', error);
       set({ error: 'Failed to update unit', isLoading: false });
       return null;
     }

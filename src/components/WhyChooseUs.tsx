@@ -96,7 +96,6 @@ const WhyChooseUs = () => {
             className="flex gap-6 overflow-hidden scrollbar-hide"
             style={{ scrollBehavior: 'auto' }}
           >
-            {/* Duplicate the features array for infinite scroll effect */}
             {[...features, ...features].map((feature, idx) => (
               <div key={idx} className="flex-shrink-0 w-64">
                 <Card className="text-center hover:shadow-card-hover transition-all duration-300 h-full">

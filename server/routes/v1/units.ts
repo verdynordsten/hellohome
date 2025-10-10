@@ -12,8 +12,26 @@ import {
   sendCreatedResponse,
   sendNoContentResponse
 } from '../../utils/response';
+import multer from 'multer';
+import { uploadMultipleFilesToS3, deleteMultipleFilesFromS3 } from '../../utils/storage';
 
 const router = Router();
+
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit per file
+  },
+  fileFilter: (req, file, cb) => {
+    // Accept only image files
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  },
+});
 
 router.get('/', async (req, res: Response) => {
   try {
@@ -246,13 +264,45 @@ router.get('/slug/:slug', async (req, res: Response) => {
   }
 });
 
-router.post('/', authenticateToken, async (req, res: Response) => {
+router.post('/', authenticateToken, upload.array('images', 10), async (req, res: Response) => {
   try {
     const unitData = req.body;
+    const files = req.files as Express.Multer.File[];
     
     if (!unitData.location_id || !unitData.type) {
       return sendBadRequestResponse(res, 'Location ID and type are required');
     }
+    
+    let uploadedImageUrls: string[] = [];
+    
+    // Handle file uploads if any
+    if (files && files.length > 0) {
+      try {
+        const fileData = files.map((file: Express.Multer.File) => ({
+          buffer: file.buffer,
+          originalName: file.originalname,
+          contentType: file.mimetype,
+        }));
+        
+        uploadedImageUrls = await uploadMultipleFilesToS3(fileData);
+      } catch (uploadError) {
+        console.error('Error uploading files:', uploadError);
+        return sendErrorResponse(res, 'Failed to upload images to storage');
+      }
+    }
+    
+    // Parse existing images from form data if provided
+    let existingImages: string[] = [];
+    if (unitData.existing_images) {
+      try {
+        existingImages = JSON.parse(unitData.existing_images);
+      } catch (parseError) {
+        console.error('Error parsing existing images:', parseError);
+      }
+    }
+    
+    // Combine uploaded images with existing images
+    const allImages = [...existingImages, ...uploadedImageUrls];
     
     const result = await db.insert(units).values({
       locationId: unitData.location_id,
@@ -263,10 +313,12 @@ router.post('/', authenticateToken, async (req, res: Response) => {
       description: unitData.description || null,
       pricePerMonth: unitData.price_per_month ? unitData.price_per_month.toString() : null,
       pricePerNight: unitData.price_per_night ? unitData.price_per_night.toString() : null,
-      available: unitData.available !== undefined ? unitData.available : true,
-      imageUrl: unitData.image_url || null,
-      images: unitData.images || null,
-      features: unitData.features || null,
+      // Handle boolean field specifically for FormData
+      available: unitData.available !== undefined ?
+        (typeof unitData.available === 'string' ? unitData.available === 'true' : unitData.available) : true,
+      imageUrl: null, // Always null as requested
+      images: allImages.length > 0 ? allImages : null,
+      features: unitData.features ? JSON.parse(unitData.features) : null,
       view: unitData.view || null,
       floor: unitData.floor || null,
       building: unitData.building || null,
@@ -275,6 +327,10 @@ router.post('/', authenticateToken, async (req, res: Response) => {
     }).returning();
     
     if (result.length === 0) {
+      // If database insert failed, try to delete uploaded files
+      if (uploadedImageUrls.length > 0) {
+        await deleteMultipleFilesFromS3(uploadedImageUrls);
+      }
       return sendErrorResponse(res, 'Failed to create unit');
     }
     
@@ -286,41 +342,122 @@ router.post('/', authenticateToken, async (req, res: Response) => {
   }
 });
 
-router.put('/:id', authenticateToken, async (req, res: Response) => {
+router.put('/:id', authenticateToken, upload.array('images', 10), async (req, res: Response) => {
   try {
     const { id } = req.params;
     const unitData = req.body;
+    const files = req.files as Express.Multer.File[];
     
     const existingUnit = await db.select().from(units).where(eq(units.id, id)).limit(1);
     if (existingUnit.length === 0) {
       return sendNotFoundResponse(res, 'Unit not found');
     }
     
+    let uploadedImageUrls: string[] = [];
+    let imagesToDelete: string[] = [];
+    
+    // Handle file uploads if any
+    if (files && files.length > 0) {
+      try {
+        const fileData = files.map((file: Express.Multer.File) => ({
+          buffer: file.buffer,
+          originalName: file.originalname,
+          contentType: file.mimetype,
+        }));
+        
+        uploadedImageUrls = await uploadMultipleFilesToS3(fileData);
+      } catch (uploadError) {
+        console.error('Error uploading files:', uploadError);
+        return sendErrorResponse(res, 'Failed to upload images to storage');
+      }
+    }
+    
+    // Handle image deletions if specified
+    if (unitData.images_to_delete) {
+      try {
+        imagesToDelete = JSON.parse(unitData.images_to_delete);
+        await deleteMultipleFilesFromS3(imagesToDelete);
+      } catch (deleteError) {
+        console.error('Error deleting images:', deleteError);
+      }
+    }
+    
+    // Parse existing images from form data if provided
+    let existingImages: string[] = [];
+    if (unitData.existing_images) {
+      try {
+        existingImages = JSON.parse(unitData.existing_images);
+      } catch (parseError) {
+        console.error('Error parsing existing images:', parseError);
+        // If parsing fails, use the current unit's images
+        existingImages = existingUnit[0].images || [];
+      }
+    } else {
+      // If no existing_images provided, use the current unit's images
+      existingImages = existingUnit[0].images || [];
+    }
+    
+    // Filter out images that were marked for deletion
+    const filteredExistingImages = existingImages.filter(img => !imagesToDelete.includes(img));
+    
+    // Combine filtered existing images with newly uploaded images
+    const allImages = [...filteredExistingImages, ...uploadedImageUrls];
+    
+    // Parse features if provided
+    let parsedFeatures = existingUnit[0].features;
+    if (unitData.features) {
+      try {
+        parsedFeatures = JSON.parse(unitData.features);
+      } catch (parseError) {
+        console.error('Error parsing features:', parseError);
+      }
+    }
+    
+    // Create update object with only the fields that are provided
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: any = {
+      updatedAt: new Date(),
+      images: allImages.length > 0 ? allImages : null,
+      imageUrl: null, // Always null as requested
+    };
+    
+    // Only include fields that are explicitly provided and not empty in the request
+    if (unitData.location_id !== undefined && unitData.location_id !== "") updateData.locationId = unitData.location_id;
+    if (unitData.type !== undefined && unitData.type !== "") updateData.type = unitData.type;
+    if (unitData.name !== undefined && unitData.name !== "") updateData.name = unitData.name;
+    if (unitData.unit_name !== undefined && unitData.unit_name !== "") updateData.unitName = unitData.unit_name;
+    if (unitData.slug !== undefined && unitData.slug !== "") updateData.slug = unitData.slug;
+    if (unitData.description !== undefined && unitData.description !== "") updateData.description = unitData.description;
+    if (unitData.price_per_month !== undefined && unitData.price_per_month !== "") updateData.pricePerMonth = unitData.price_per_month.toString();
+    if (unitData.price_per_night !== undefined && unitData.price_per_night !== "") updateData.pricePerNight = unitData.price_per_night.toString();
+    // Handle boolean field specifically for FormData
+    if (unitData.available !== undefined) {
+      // Convert string to boolean if needed
+      let availableValue = unitData.available;
+      if (typeof availableValue === 'string') {
+        availableValue = availableValue === 'true';
+      }
+      updateData.available = availableValue;
+    }
+    if (unitData.view !== undefined && unitData.view !== "") updateData.view = unitData.view;
+    if (unitData.floor !== undefined && unitData.floor !== "") updateData.floor = unitData.floor;
+    if (unitData.building !== undefined && unitData.building !== "") updateData.building = unitData.building;
+    if (unitData.tower !== undefined && unitData.tower !== "") updateData.tower = unitData.tower;
+    if (unitData.map_embed_url !== undefined && unitData.map_embed_url !== "") updateData.mapEmbedUrl = unitData.map_embed_url;
+    if (unitData.features !== undefined) updateData.features = parsedFeatures;
+    // Check if any fields are actually being updated
+    const _hasUpdates = Object.keys(updateData).length > 2; // More than just updatedAt and images/imageUrl
+    
     const result = await db.update(units)
-      .set({
-        locationId: unitData.location_id !== undefined ? unitData.location_id : existingUnit[0].locationId,
-        type: unitData.type !== undefined ? unitData.type : existingUnit[0].type,
-        name: unitData.name !== undefined ? unitData.name : existingUnit[0].name,
-        unitName: unitData.unit_name !== undefined ? unitData.unit_name : existingUnit[0].unitName,
-        slug: unitData.slug !== undefined ? unitData.slug : existingUnit[0].slug,
-        description: unitData.description !== undefined ? unitData.description : existingUnit[0].description,
-        pricePerMonth: unitData.price_per_month !== undefined ? unitData.price_per_month.toString() : existingUnit[0].pricePerMonth,
-        pricePerNight: unitData.price_per_night !== undefined ? unitData.price_per_night.toString() : existingUnit[0].pricePerNight,
-        available: unitData.available !== undefined ? unitData.available : existingUnit[0].available,
-        imageUrl: unitData.image_url !== undefined ? unitData.image_url : existingUnit[0].imageUrl,
-        images: unitData.images !== undefined ? unitData.images : existingUnit[0].images,
-        features: unitData.features !== undefined ? unitData.features : existingUnit[0].features,
-        view: unitData.view !== undefined ? unitData.view : existingUnit[0].view,
-        floor: unitData.floor !== undefined ? unitData.floor : existingUnit[0].floor,
-        building: unitData.building !== undefined ? unitData.building : existingUnit[0].building,
-        tower: unitData.tower !== undefined ? unitData.tower : existingUnit[0].tower,
-        mapEmbedUrl: unitData.map_embed_url !== undefined ? unitData.map_embed_url : existingUnit[0].mapEmbedUrl,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(units.id, id))
       .returning();
     
     if (result.length === 0) {
+      // If database update failed, try to delete newly uploaded files
+      if (uploadedImageUrls.length > 0) {
+        await deleteMultipleFilesFromS3(uploadedImageUrls);
+      }
       return sendErrorResponse(res, 'Failed to update unit');
     }
     
