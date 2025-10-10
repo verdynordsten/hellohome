@@ -5,10 +5,10 @@ import bcrypt from 'bcryptjs';
 // Load environment variables
 config({ path: '.env.local' });
 
-const connectionString = process.env.VITE_DATABASE_URL;
+const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
-  throw new Error('VITE_DATABASE_URL is not defined');
+  throw new Error('DATABASE_URL is not defined');
 }
 
 async function createAdminUser() {

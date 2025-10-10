@@ -1,7 +1,7 @@
 const processPolyfill = {
   env: {
     NODE_ENV: import.meta.env.MODE,
-    VITE_DATABASE_URL: import.meta.env.VITE_DATABASE_URL,
+    DATABASE_URL: import.meta.env.DATABASE_URL,
     VITE_APP_NAME: import.meta.env.VITE_APP_NAME,
     VITE_APP_URL: import.meta.env.VITE_APP_URL,
   },

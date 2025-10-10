@@ -10,7 +10,7 @@ config({ path: '.env.local' });
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
-  throw new Error('VITE_DATABASE_URL is not defined');
+  throw new Error('DATABASE_URL is not defined');
 }
 
 // Create postgres client

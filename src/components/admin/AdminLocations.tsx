@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocationStore } from "@/stores";
 import { Location, CreateLocationInput, UpdateLocationInput } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -33,12 +33,14 @@ export const AdminLocations = () => {
     slug: "",
   });
   const { toast } = useToast();
+  const hasFetched = useRef(false);
 
   useEffect(() => {
-    if (locations.length === 0) {
+    if (!hasFetched.current && locations.length === 0 && !isLoading) {
+      hasFetched.current = true;
       fetchLocations();
     }
-  }, [fetchLocations, locations.length]);
+  }, [fetchLocations, locations.length, isLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

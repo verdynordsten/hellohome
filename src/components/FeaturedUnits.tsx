@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useUnitStore, useLocationStore } from "@/stores";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,34 +12,55 @@ const FeaturedUnits = () => {
   const { units, isLoading, fetchUnits } = useUnitStore();
   const { fetchLocationById } = useLocationStore();
   const [unitLocations, setUnitLocations] = useState<Record<string, Location>>({});
+  
+  const unitsFetched = useRef(false);
+  const locationsFetched = useRef(false);
 
   useEffect(() => {
-    if (units.length === 0) {
+    if (!unitsFetched.current && units.length === 0 && !isLoading) {
+      unitsFetched.current = true;
       fetchUnits();
     }
-  }, [fetchUnits, units.length]);
+  }, [fetchUnits, units.length, isLoading]);
 
   useEffect(() => {
     const fetchLocationsForUnits = async () => {
+      if (locationsFetched.current) return;
+      
+      locationsFetched.current = true;
       const locationMap: Record<string, Location> = {};
       
-      for (const unit of units) {
-        if (unit.location_id && !locationMap[unit.id]) {
-          try {
-            const location = await fetchLocationById(unit.location_id);
-            if (location) {
-              locationMap[unit.id] = location;
-            }
-          } catch (error) {
-            console.error(`Error fetching location for unit ${unit.id}:`, error);
-          }
+      const uniqueLocationIds = [...new Set(units.map(unit => unit.location_id).filter(Boolean))];
+      
+      const locationPromises = uniqueLocationIds.map(async (locationId) => {
+        try {
+          const location = await fetchLocationById(locationId!);
+          return { locationId, location };
+        } catch (error) {
+          console.error(`Error fetching location ${locationId}:`, error);
+          return { locationId, location: null };
         }
-      }
+      });
+      
+      const locationResults = await Promise.all(locationPromises);
+      
+      const locationIdToLocation: Record<string, Location> = {};
+      locationResults.forEach(({ locationId, location }) => {
+        if (location) {
+          locationIdToLocation[locationId!] = location;
+        }
+      });
+      
+      units.forEach(unit => {
+        if (unit.location_id && locationIdToLocation[unit.location_id]) {
+          locationMap[unit.id] = locationIdToLocation[unit.location_id];
+        }
+      });
       
       setUnitLocations(locationMap);
     };
 
-    if (units.length > 0) {
+    if (units.length > 0 && !locationsFetched.current) {
       fetchLocationsForUnits();
     }
   }, [units, fetchLocationById]);

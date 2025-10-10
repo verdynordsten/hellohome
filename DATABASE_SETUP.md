@@ -12,7 +12,7 @@ This project uses a direct PostgreSQL connection for both development and produc
 
 2. Update `.env.local` with your PostgreSQL connection string:
    ```
-   VITE_DATABASE_URL=postgres://username:password@host:port/database_name
+   DATABASE_URL=postgres://username:password@host:port/database_name
    ```
 
 3. Make sure your PostgreSQL server is running and accessible.
@@ -79,6 +79,6 @@ This error occurs when the postgres library tries to access Node.js globals in t
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `VITE_DATABASE_URL` | PostgreSQL connection string | Yes |
+| `DATABASE_URL` | PostgreSQL connection string | Yes |
 | `VITE_APP_NAME` | Application name | No |
 | `VITE_APP_URL` | Application URL | No |

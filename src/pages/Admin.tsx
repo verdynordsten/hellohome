@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores";
 import Navbar from "@/components/Navbar";
@@ -10,14 +10,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const Admin = () => {
   const navigate = useNavigate();
   const { isAuthenticated, checkAuth, user, logout } = useAuthStore();
+  const hasCheckedAuth = useRef(false);
 
   useEffect(() => {
-    checkAuth().then(() => {
-      if (!isAuthenticated) {
-        navigate("/auth");
-      }
-    });
-  }, [checkAuth, isAuthenticated, navigate]);
+    if (!hasCheckedAuth.current) {
+      hasCheckedAuth.current = true;
+      const checkInitialAuth = async () => {
+        await checkAuth();
+      };
+      
+      checkInitialAuth();
+    }
+  }, [checkAuth]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/auth");
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleLogout = () => {
     logout();

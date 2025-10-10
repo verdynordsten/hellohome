@@ -10,7 +10,6 @@ interface ImageCarouselProps {
 const ImageCarousel = ({ images, alt, className }: ImageCarouselProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
-  // Use default image if no images provided
   const imageList = images.length > 0 
     ? images 
     : ["https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800"];

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useLocationStore } from "@/stores";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -8,12 +8,14 @@ import { Link } from "react-router-dom";
 
 const AllLocations = () => {
   const { locations, isLoading, fetchLocations } = useLocationStore();
+  const hasFetched = useRef(false);
 
   useEffect(() => {
-    if (locations.length === 0) {
+    if (!hasFetched.current && locations.length === 0 && !isLoading) {
+      hasFetched.current = true;
       fetchLocations();
     }
-  }, [fetchLocations, locations.length]);
+  }, [fetchLocations, locations.length, isLoading]);
   
   const shuffled = [...locations].sort(() => Math.random() - 0.5);
   const displayLocations = shuffled.slice(0, 4);

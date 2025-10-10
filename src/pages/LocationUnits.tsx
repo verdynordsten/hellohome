@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useLocationStore, useUnitStore } from "@/stores";
 import { Location, Unit } from "@/types";
@@ -45,6 +45,9 @@ const LocationUnits = () => {
   const [searchInput, setSearchInput] = useState("");
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   
+  const locationFetched = useRef(false);
+  const unitsFetched = useRef(false);
+  
   useEffect(() => {
     if (unitsPerPage !== 9) {
       setSorting('price_per_night', sortOrder || 'asc');
@@ -56,21 +59,30 @@ const LocationUnits = () => {
     const toParam = searchParams.get('to');
     
     if (fromParam) {
-      setDateRange(prev => ({
-        ...prev,
-        from: new Date(fromParam)
-      }));
+      const [year, month, day] = fromParam.split('-').map(Number);
+      if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+        setDateRange(prev => ({
+          ...prev,
+          from: new Date(year, month - 1, day)
+        }));
+      }
     }
     
     if (toParam) {
-      setDateRange(prev => ({
-        ...prev,
-        to: new Date(toParam)
-      }));
+      const [year, month, day] = toParam.split('-').map(Number);
+      if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+        setDateRange(prev => ({
+          ...prev,
+          to: new Date(year, month - 1, day)
+        }));
+      }
     }
   }, [searchParams]);
 
   const fetchLocationAndUnits = useCallback(async () => {
+    if (locationFetched.current) return;
+    
+    locationFetched.current = true;
     setLoading(true);
     try {
       let locationData = await fetchLocationBySlug(locationSlug);
@@ -91,7 +103,7 @@ const LocationUnits = () => {
   }, [fetchLocationBySlug, fetchLocationById, locationSlug]);
 
   useEffect(() => {
-    if (locationSlug) {
+    if (locationSlug && !locationFetched.current) {
       fetchLocationAndUnits();
     }
   }, [locationSlug, fetchLocationAndUnits]);
@@ -107,7 +119,23 @@ const LocationUnits = () => {
   }, [searchInput, searchQuery, setSearchQuery]);
 
   useEffect(() => {
-    if (location) {
+    if (location && !unitsFetched.current) {
+      unitsFetched.current = true;
+      setLoading(true);
+      fetchUnitsByLocationIdPaginated(location.id, {
+        page: currentPage,
+        limit: 9,
+        search: searchQuery,
+        sortBy: 'price_per_night',
+        sortOrder: sortOrder || 'asc'
+      }).then((response) => {
+        setUnits(response.units);
+        setLoading(false);
+      }).catch((error) => {
+        console.error("Error fetching units:", error);
+        setLoading(false);
+      });
+    } else if (location && unitsFetched.current && (currentPage > 1 || searchQuery || sortBy || sortOrder)) {
       setLoading(true);
       fetchUnitsByLocationIdPaginated(location.id, {
         page: currentPage,

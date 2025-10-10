@@ -112,9 +112,11 @@ export interface AuthState {
   } | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  error: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>;
+  clearError: () => void;
 }
 
 export interface LocationState {

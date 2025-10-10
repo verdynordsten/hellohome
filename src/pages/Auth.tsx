@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores";
 import { Button } from "@/components/ui/button";
@@ -16,14 +16,24 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isAuthenticated, login, checkAuth } = useAuthStore();
+  const hasCheckedAuth = useRef(false);
 
   useEffect(() => {
-    checkAuth().then(() => {
-      if (isAuthenticated) {
-        navigate("/admin");
-      }
-    });
-  }, [isAuthenticated, navigate, checkAuth]);
+    if (!hasCheckedAuth.current) {
+      hasCheckedAuth.current = true;
+      const checkInitialAuth = async () => {
+        await checkAuth();
+      };
+      
+      checkInitialAuth();
+    }
+  }, [checkAuth]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/admin");
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();

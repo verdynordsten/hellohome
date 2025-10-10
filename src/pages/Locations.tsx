@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useLocationStore } from "@/stores";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -8,12 +8,14 @@ import { Link } from "react-router-dom";
 
 const Locations = () => {
   const { locations, isLoading, fetchLocations } = useLocationStore();
+  const hasFetched = useRef(false);
 
   useEffect(() => {
-    if (locations.length === 0) {
+    if (!hasFetched.current && locations.length === 0 && !isLoading) {
+      hasFetched.current = true;
       fetchLocations();
     }
-  }, [fetchLocations, locations.length]);
+  }, [fetchLocations, locations.length, isLoading]);
   
   const sortedLocations = [...locations].sort((a, b) => a.name.localeCompare(b.name));
 

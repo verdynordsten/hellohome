@@ -4,7 +4,7 @@ declare global {
     process: {
       env: {
         NODE_ENV: string;
-        VITE_DATABASE_URL?: string;
+        DATABASE_URL?: string;
         [key: string]: string | undefined;
       };
       version?: string;

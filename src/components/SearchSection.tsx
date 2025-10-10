@@ -3,7 +3,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CalendarIcon, MapPin, Search } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
@@ -23,6 +23,7 @@ const SearchSection = () => {
   const [selectedLocation, setSelectedLocation] = useState<LocationValue | "">("");
   const navigate = useNavigate();
   const { locations, fetchLocations, isLoading } = useLocationStore();
+  const hasFetched = useRef(false);
 
   const formatDateRange = (range: DateRange | undefined): string => {
     if (!range?.from) return DATE_PLACEHOLDER;
@@ -41,10 +42,11 @@ const SearchSection = () => {
   };
 
   useEffect(() => {
-    if (locations.length === 0) {
+    if (!hasFetched.current && locations.length === 0 && !isLoading) {
+      hasFetched.current = true;
       fetchLocations();
     }
-  }, [fetchLocations, locations.length]);
+  }, [fetchLocations, locations.length, isLoading]);
 
   const handleSearch = (): void => {
     if (!selectedLocation) {
@@ -61,11 +63,13 @@ const SearchSection = () => {
     const params = new URLSearchParams();
     
     if (dateRange?.from) {
-      params.append('from', dateRange.from.toISOString());
+      const formattedFrom = format(dateRange.from, 'yyyy-MM-dd');
+      params.append('from', formattedFrom);
     }
     
     if (dateRange?.to) {
-      params.append('to', dateRange.to.toISOString());
+      const formattedTo = format(dateRange.to, 'yyyy-MM-dd');
+      params.append('to', formattedTo);
     }
     
     if (params.toString()) {

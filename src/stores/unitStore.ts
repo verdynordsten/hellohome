@@ -281,46 +281,58 @@ export const useUnitStore = create<UnitState>((set, _get) => ({
   },
 
   setSearchQuery: (query: string) => {
-    set({ searchQuery: query, currentPage: 1 });
-    _get().fetchUnits({
-      page: 1,
-      limit: _get().unitsPerPage,
-      search: query,
-      sortBy: 'price_per_night',
-      sortOrder: _get().sortOrder
-    });
+    const currentState = _get();
+    if (currentState.searchQuery !== query) {
+      set({ searchQuery: query, currentPage: 1 });
+      _get().fetchUnits({
+        page: 1,
+        limit: currentState.unitsPerPage,
+        search: query,
+        sortBy: 'price_per_night',
+        sortOrder: currentState.sortOrder
+      });
+    }
   },
 
   setCurrentPage: (page: number) => {
-    set({ currentPage: page });
-    _get().fetchUnits({
-      page,
-      limit: _get().unitsPerPage,
-      search: _get().searchQuery,
-      sortBy: 'price_per_night',
-      sortOrder: _get().sortOrder
-    });
+    const currentState = _get();
+    if (currentState.currentPage !== page) {
+      set({ currentPage: page });
+      _get().fetchUnits({
+        page,
+        limit: currentState.unitsPerPage,
+        search: currentState.searchQuery,
+        sortBy: 'price_per_night',
+        sortOrder: currentState.sortOrder
+      });
+    }
   },
 
   setUnitsPerPage: (limit: number) => {
-    set({ unitsPerPage: limit, currentPage: 1 });
-    _get().fetchUnits({
-      page: 1,
-      limit,
-      search: _get().searchQuery,
-      sortBy: 'price_per_night',
-      sortOrder: _get().sortOrder
-    });
+    const currentState = _get();
+    if (currentState.unitsPerPage !== limit) {
+      set({ unitsPerPage: limit, currentPage: 1 });
+      _get().fetchUnits({
+        page: 1,
+        limit,
+        search: currentState.searchQuery,
+        sortBy: 'price_per_night',
+        sortOrder: currentState.sortOrder
+      });
+    }
   },
 
   setSorting: (sortBy: string, sortOrder: 'asc' | 'desc') => {
-    set({ sortBy: 'price_per_night', sortOrder, currentPage: 1 });
-    _get().fetchUnits({
-      page: 1,
-      limit: _get().unitsPerPage,
-      search: _get().searchQuery,
-      sortBy: 'price_per_night',
-      sortOrder
-    });
+    const currentState = _get();
+    if (currentState.sortOrder !== sortOrder) {
+      set({ sortBy: 'price_per_night', sortOrder, currentPage: 1 });
+      _get().fetchUnits({
+        page: 1,
+        limit: currentState.unitsPerPage,
+        search: currentState.searchQuery,
+        sortBy: 'price_per_night',
+        sortOrder
+      });
+    }
   },
 }));

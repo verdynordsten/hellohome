@@ -768,9 +768,9 @@ export const AdminUnits = () => {
                       return (
                         <PaginationItem key={page}>
                           <PaginationLink
-                            onClick={() => setCurrentPage(page)}
+                            onClick={() => page !== currentPage && setCurrentPage(page)}
                             isActive={page === currentPage}
-                            className="cursor-pointer"
+                            className={page === currentPage ? "pointer-events-none" : "cursor-pointer"}
                           >
                             {page}
                           </PaginationLink>

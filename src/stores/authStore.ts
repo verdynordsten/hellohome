@@ -1,11 +1,25 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { AuthState } from '../types';
+import { AuthState, AppRole } from '../types';
+import { login as apiLogin, verifyToken as apiVerifyToken } from '../services/api';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const mapApiUserToAuthUser = (apiUser: {
+  id: string;
+  email: string;
+  role: AppRole;
+  createdAt: string;
+  updatedAt: string;
+}) => ({
+  id: apiUser.id,
+  email: apiUser.email,
+  role: apiUser.role,
+});
 
-const handleAuthError = (error: unknown, message: string): void => {
+const handleAuthError = (error: unknown, message: string, setError?: (error: string) => void): void => {
   console.error(message, error);
+  if (setError) {
+    setError(message);
+  }
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -14,35 +28,25 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       isLoading: false,
+      error: null,
 
       login: async (email: string, password: string): Promise<void> => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
-          const response = await fetch(`${API_BASE_URL}/auth/login`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Login failed');
-          }
-
-          const data = await response.json();
+          const response = await apiLogin({ email, password });
           
-          localStorage.setItem('auth_token', data.token);
+          localStorage.setItem('auth_token', response.token);
           
           set({
-            user: data.user,
+            user: mapApiUserToAuthUser(response.user),
             isAuthenticated: true,
             isLoading: false,
+            error: null,
           });
         } catch (error) {
-          handleAuthError(error, 'Login failed');
-          set({ isLoading: false });
+          handleAuthError(error, 'Login failed', (errorMsg) =>
+            set({ error: errorMsg, isLoading: false })
+          );
           throw error;
         }
       },
@@ -53,6 +57,7 @@ export const useAuthStore = create<AuthState>()(
         set({
           user: null,
           isAuthenticated: false,
+          error: null,
         });
       },
 
@@ -64,32 +69,32 @@ export const useAuthStore = create<AuthState>()(
           return;
         }
 
+        set({ isLoading: true, error: null });
+        
         try {
-          const response = await fetch(`${API_BASE_URL}/auth/verify`, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (!response.ok) {
-            localStorage.removeItem('auth_token');
-            set({ isAuthenticated: false, user: null });
-            return;
-          }
-
-          const data = await response.json();
+          const response = await apiVerifyToken();
           
           set({
-            user: data.user,
+            user: mapApiUserToAuthUser(response.user),
             isAuthenticated: true,
+            isLoading: false,
+            error: null,
           });
         } catch (error) {
-          handleAuthError(error, 'Token verification failed');
-          localStorage.removeItem('auth_token');
-          set({ isAuthenticated: false, user: null });
+          handleAuthError(error, 'Token verification failed', (errorMsg) => {
+            localStorage.removeItem('auth_token');
+            set({
+              error: errorMsg,
+              isAuthenticated: false,
+              user: null,
+              isLoading: false
+            });
+          });
         }
+      },
+
+      clearError: (): void => {
+        set({ error: null });
       },
     }),
     {
