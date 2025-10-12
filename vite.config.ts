@@ -22,7 +22,12 @@ export default defineConfig(({ mode }) => {
     define: {
       global: 'globalThis',
       'Buffer': 'globalThis.Buffer',
-      'process': 'globalThis.process || { env: {} }',
+      'process.env': JSON.stringify({
+        NODE_ENV: env.NODE_ENV || 'production',
+        DATABASE_URL: env.DATABASE_URL || '',
+        VITE_APP_NAME: env.VITE_APP_NAME || '',
+        VITE_APP_URL: env.VITE_APP_URL || '',
+      }),
       __APP_ENV__: JSON.stringify(env),
     },
     optimizeDeps: {
