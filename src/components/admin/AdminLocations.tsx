@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect, useRef } from "react";
+import { useLocationStore } from "@/stores";
+import { Location, CreateLocationInput, UpdateLocationInput } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,93 +9,143 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Edit } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-
-type Location = {
-  id: string;
-  name: string;
-  description: string | null;
-  units_count: number;
-  image_url: string | null;
-  slug: string | null;
-};
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { FileUpload } from "@/components/ui/file-upload";
+import { uploadFiles, UploadProgress } from "@/services/upload";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const AdminLocations = () => {
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { locations, isLoading, fetchLocations, createLocation, updateLocation, deleteLocation } = useLocationStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [formData, setFormData] = useState({
     name: "",
-    description: "",
-    image_url: "",
     slug: "",
+    description: "",
+    existingImages: [] as string[],
+    imageFile: null as File | null,
+    uploadedImageUrl: "",
+    imagesToDelete: [] as string[],
   });
   const { toast } = useToast();
+  const hasFetched = useRef(false);
 
   useEffect(() => {
-    fetchLocations();
-  }, []);
-
-  const fetchLocations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("locations")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setLocations(data || []);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+    if (!hasFetched.current && locations.length === 0 && !isLoading) {
+      hasFetched.current = true;
+      fetchLocations();
     }
-  };
+  }, [fetchLocations, locations.length, isLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
+      setIsUploading(true);
+      setUploadStatus('uploading');
+      setUploadProgress(0);
+
       if (editingLocation) {
-        const { error } = await supabase
-          .from("locations")
-          .update(formData)
-          .eq("id", editingLocation.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Location updated",
-          description: "The location has been successfully updated.",
-        });
+        // Combine existing images with newly uploaded image
+        const allImages = [...formData.existingImages];
+        if (formData.uploadedImageUrl) {
+          allImages.push(formData.uploadedImageUrl);
+        }
+        
+        const updateData: UpdateLocationInput = {
+          name: formData.name,
+          description: formData.description || undefined,
+          image_url: allImages.length > 0 ? allImages[0] : undefined,
+          slug: formData.slug || undefined,
+        };
+        
+        const result = await updateLocation(editingLocation.id, updateData);
+        
+        if (result) {
+          toast({
+            title: "Location updated",
+            description: "The location has been successfully updated.",
+          });
+        } else {
+          throw new Error("Failed to update location");
+        }
+        
+        // Set progress to 100% and status to success
+        setUploadProgress(100);
+        setUploadStatus('success');
       } else {
-        const { error } = await supabase
-          .from("locations")
-          .insert([formData]);
-
-        if (error) throw error;
-
-        toast({
-          title: "Location created",
-          description: "The location has been successfully created.",
-        });
+        // Use the uploaded image URL if available
+        const imageUrl = formData.uploadedImageUrl;
+        const createData: CreateLocationInput = {
+          name: formData.name,
+          description: formData.description || undefined,
+          image_url: imageUrl || undefined,
+          slug: formData.slug || undefined,
+        };
+        
+        const result = await createLocation(createData);
+        
+        if (result) {
+          toast({
+            title: "Location created",
+            description: "The location has been successfully created.",
+          });
+        } else {
+          throw new Error("Failed to create location");
+        }
+        
+        // Set progress to 100% and status to success
+        setUploadProgress(100);
+        setUploadStatus('success');
       }
 
+      // Reset upload state after a short delay to show success status
+      setTimeout(() => {
+        setIsUploading(false);
+        setUploadStatus('idle');
+        setUploadProgress(0);
+      }, 1500);
+
       setDialogOpen(false);
-      setFormData({ name: "", description: "", image_url: "", slug: "" });
+      setFormData({
+        name: "",
+        slug: "",
+        description: "",
+        existingImages: [],
+        imageFile: null,
+        uploadedImageUrl: "",
+        imagesToDelete: []
+      });
       setEditingLocation(null);
-      fetchLocations();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      // Set upload status to error
+      setUploadStatus('error');
+      setIsUploading(false);
+      
       toast({
         title: "Error",
-        description: error.message,
+        description: (error as Error).message,
         variant: "destructive",
       });
+      
+      // Reset upload state after error
+      setTimeout(() => {
+        setUploadStatus('idle');
+        setUploadProgress(0);
+      }, 3000);
     }
   };
 
@@ -102,45 +153,51 @@ export const AdminLocations = () => {
     setEditingLocation(location);
     setFormData({
       name: location.name,
-      description: location.description || "",
-      image_url: location.image_url || "",
       slug: location.slug || "",
+      description: location.description || "",
+      existingImages: location.image_url ? [location.image_url] : [],
+      imageFile: null,
+      uploadedImageUrl: "",
+      imagesToDelete: [],
     });
     setDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this location?")) return;
-
     try {
-      const { error } = await supabase
-        .from("locations")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Location deleted",
-        description: "The location has been successfully deleted.",
-      });
-
-      fetchLocations();
-    } catch (error: any) {
+      const result = await deleteLocation(id);
+      
+      if (result) {
+        toast({
+          title: "Location deleted",
+          description: "The location has been successfully deleted.",
+        });
+      } else {
+        throw new Error("Failed to delete location");
+      }
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message,
+        description: (error as Error).message,
         variant: "destructive",
       });
     }
   };
 
   const resetForm = () => {
-    setFormData({ name: "", description: "", image_url: "", slug: "" });
+    setFormData({
+      name: "",
+      slug: "",
+      description: "",
+      existingImages: [],
+      imageFile: null,
+      uploadedImageUrl: "",
+      imagesToDelete: []
+    });
     setEditingLocation(null);
   };
 
-  if (loading) {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
 
@@ -163,6 +220,12 @@ export const AdminLocations = () => {
               <DialogTitle>
                 {editingLocation ? "Edit Location" : "Add New Location"}
               </DialogTitle>
+              <DialogDescription>
+                {editingLocation
+                  ? "Make changes to the location details below. Click save when you're done."
+                  : "Fill in the details for the new location below. Click create when you're done."
+                }
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -175,25 +238,6 @@ export const AdminLocations = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="image_url">Image URL</Label>
-                <Input
-                  id="image_url"
-                  type="url"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="slug">Slug (URL-friendly name)</Label>
                 <Input
                   id="slug"
@@ -203,8 +247,127 @@ export const AdminLocations = () => {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full">
-                {editingLocation ? "Update Location" : "Create Location"}
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                />
+              </div>
+              
+              {editingLocation && formData.existingImages.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Existing Image</Label>
+                  <div className="relative group">
+                    <img
+                      src={formData.existingImages[0]}
+                      alt="Existing location image"
+                      className="w-full h-32 object-cover rounded border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newImagesToDelete = [...formData.imagesToDelete, formData.existingImages[0]];
+                        const newExistingImages = formData.existingImages.filter(img => img !== formData.existingImages[0]);
+                        setFormData({
+                          ...formData,
+                          imagesToDelete: newImagesToDelete,
+                          existingImages: newExistingImages
+                        });
+                      }}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              <FileUpload
+                accept="image/*"
+                multiple={false}
+                maxFiles={1}
+                onFilesSelected={(files) => setFormData({ ...formData, imageFile: files[0] || null })}
+                onUpload={async (files) => {
+                  const formDataToSend = new FormData();
+                  formDataToSend.append('image', files[0]);
+                  
+                  try {
+                    setUploadStatus('uploading');
+                    const response = await uploadFiles('/locations/upload-image', formDataToSend, {
+                      onProgress: (progress: UploadProgress) => {
+                        setUploadProgress(progress.percentage);
+                      }
+                    });
+                    
+                    // Update form data with uploaded URL
+                    const url = Array.isArray(response) ? response[0] : response;
+                    setFormData(prev => ({
+                      ...prev,
+                      uploadedImageUrl: url
+                    }));
+                    
+                    setTimeout(() => {
+                      setUploadStatus('idle');
+                      setUploadProgress(0);
+                    }, 2000);
+                    
+                    return [url];
+                  } catch (error) {
+                    setUploadStatus('error');
+                    setTimeout(() => {
+                      setUploadStatus('idle');
+                      setUploadProgress(0);
+                    }, 3000);
+                    throw new Error((error as Error).message);
+                  }
+                }}
+                disabled={isUploading}
+                showProgress={isUploading}
+                progress={uploadProgress}
+                uploadStatus={uploadStatus}
+                label="Upload Image"
+                description="Upload an image for the location"
+                showUploadButton={true}
+              />
+              
+              {formData.uploadedImageUrl && (
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Uploaded Image:</div>
+                  <div className="relative group">
+                    <img
+                      src={formData.uploadedImageUrl}
+                      alt="Uploaded location image"
+                      className="w-full h-32 object-cover rounded border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData({
+                          ...formData,
+                          uploadedImageUrl: ""
+                        });
+                      }}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+              )}
+              <Button type="submit" className="w-full" disabled={isUploading}>
+                {isUploading ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
+                    {editingLocation ? "Updating..." : "Creating..."}
+                  </>
+                ) : (
+                  <>
+                    {editingLocation ? "Update Location" : "Create Location"}
+                  </>
+                )}
               </Button>
             </form>
           </DialogContent>
@@ -220,6 +383,7 @@ export const AdminLocations = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Image</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead>Units</TableHead>
@@ -229,32 +393,75 @@ export const AdminLocations = () => {
             <TableBody>
               {locations.map((location) => (
                 <TableRow key={location.id}>
+                  <TableCell>
+                    {location.image_url ? (
+                      <img
+                        src={location.image_url}
+                        alt={location.name}
+                        className="w-16 h-16 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 bg-muted rounded flex items-center justify-center text-muted-foreground text-xs">
+                        No image
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell className="font-medium">{location.name}</TableCell>
                   <TableCell className="max-w-md truncate">
                     {location.description || "No description"}
                   </TableCell>
                   <TableCell>{location.units_count}</TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(location)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(location.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Edit Location?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            You are about to edit the location "{location.name}". This will open the edit form where you can make changes to the location details.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleEdit(location)}>Edit</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the location "{location.name}" and remove all its data from our servers.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(location.id)}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </TableCell>
                 </TableRow>
               ))}
               {locations.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center text-muted-foreground">
                     No locations found
                   </TableCell>
                 </TableRow>

@@ -1,22 +1,16 @@
-# Welcome to your Lovable project
+# Hello Home - Premium Apartment Rentals in Batam
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/eb3f2963-89c9-4137-9fff-9cfc2e2eafe1
+Hello Home is a premium apartment rental platform in Batam, offering fully furnished units with stunning views, modern amenities, and strategic locations.
 
 ## How can I edit this code?
 
 There are several ways of editing your application.
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/eb3f2963-89c9-4137-9fff-9cfc2e2eafe1) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
 **Use your preferred IDE**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+If you want to work locally using your own IDE, you can clone this repo and make changes.
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
@@ -59,15 +53,19 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+- Express.js (for API)
+- PostgreSQL (for database)
+- Drizzle ORM (for database management)
 
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/eb3f2963-89c9-4137-9fff-9cfc2e2eafe1) and click on Share -> Publish.
+To deploy this project, you can use any hosting service that supports Node.js applications. Make sure to:
 
-## Can I connect a custom domain to my Lovable project?
+1. Build the application: `npm run build`
+2. Set up the environment variables
+3. Run the API server: `npm run api`
+4. Serve the built files
 
-Yes, you can!
+## Can I connect a custom domain to this project?
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Yes, you can! The process depends on your hosting provider. Most hosting services allow you to connect a custom domain through their dashboard or configuration settings.

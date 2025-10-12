@@ -1,113 +1,89 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { DateRange } from "react-day-picker";
 import { useParams, Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useUnitStore, useLocationStore } from "@/stores";
+import { Unit, Location } from "@/types";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Building2, MapPin, CalendarIcon, ArrowLeft, ChevronRight } from "lucide-react";
+import { MapPin, CalendarIcon, ArrowLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import LocationMap from "@/components/LocationMap";
 
-type Unit = {
-  id: string;
-  location_id: string;
-  name: string | null;
-  unit_name: string | null;
-  type: string;
-  floor: string | null;
-  building: string | null;
-  tower: string | null;
-  view: string | null;
-  features: string[] | null;
-  images: string[] | null;
-  image_url: string | null;
-  price_per_night: number | null;
-  price_per_month: number | null;
-  description: string | null;
-  available: boolean | null;
-  map_embed_url: string | null;
-};
-
-type Location = {
-  id: string;
-  name: string;
-  slug: string | null;
-};
-
 const UnitDetail = () => {
-  const { id } = useParams();
+  const { id, locationId, unitSlug } = useParams();
   const { toast } = useToast();
+  const { fetchUnitBySlug, fetchUnitById } = useUnitStore();
+  const { fetchLocationById, fetchLocationBySlug } = useLocationStore();
   const [unit, setUnit] = useState<Unit | null>(null);
   const [location, setLocation] = useState<Location | null>(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [_isTransitioning, setIsTransitioning] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      fetchUnitDetails();
-    }
-  }, [id]);
-
-  const fetchUnitDetails = async () => {
+  const fetchUnitDetails = useCallback(async () => {
     try {
-      // Try to fetch by slug first, then by id
       let unitData = null;
+      let locationData = null;
       
-      const { data: slugData } = await supabase
-        .from("units")
-        .select("*")
-        .eq("slug", id)
-        .maybeSingle();
-      
-      if (slugData) {
-        unitData = slugData;
-      } else {
-        const { data: idData } = await supabase
-          .from("units")
-          .select("*")
-          .eq("id", id)
-          .maybeSingle();
+      if (locationId && unitSlug) {
+        locationData = await fetchLocationBySlug(locationId) || await fetchLocationById(locationId);
         
-        unitData = idData;
+        if (locationData) {
+          unitData = await fetchUnitBySlug(unitSlug);
+          
+          if (unitData && unitData.location_id !== locationData.id) {
+            unitData = null;
+          }
+        }
+      } else if (id) {
+        unitData = await fetchUnitBySlug(id);
+        
+        if (!unitData) {
+          unitData = await fetchUnitById(id);
+        }
+        
+        if (unitData && unitData.location_id) {
+          locationData = await fetchLocationById(unitData.location_id);
+        }
       }
       
       if (!unitData) {
         setLoading(false);
         return;
       }
+      
       setUnit(unitData);
-
-      // Fetch location details
-      if (unitData.location_id) {
-        const { data: locationData, error: locationError } = await supabase
-          .from("locations")
-          .select("id, name, slug")
-          .eq("id", unitData.location_id)
-          .maybeSingle();
-
-        if (locationError) throw locationError;
-        if (locationData) setLocation(locationData);
+      
+      if (locationData) {
+        setLocation(locationData);
+      } else if (unitData.location_id) {
+        const fallbackLocationData = await fetchLocationById(unitData.location_id);
+        if (fallbackLocationData) setLocation(fallbackLocationData);
       }
     } catch (error) {
       console.error("Error fetching unit:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchUnitBySlug, fetchUnitById, fetchLocationById, fetchLocationBySlug, id, locationId, unitSlug]);
+
+  useEffect(() => {
+    if (id || (locationId && unitSlug)) {
+      fetchUnitDetails();
+    }
+  }, [id, locationId, unitSlug, fetchUnitDetails]);
 
   const unitImages = unit?.images && unit.images.length > 0 
     ? unit.images 
@@ -117,7 +93,6 @@ const UnitDetail = () => {
         "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800",
       ];
 
-  // Autoplay functionality
   useEffect(() => {
     const interval = setInterval(() => {
       setIsTransitioning(true);
@@ -125,7 +100,7 @@ const UnitDetail = () => {
         setSelectedImage((prev) => (prev + 1) % unitImages.length);
         setIsTransitioning(false);
       }, 300);
-    }, 4000); // Change image every 4 seconds
+    }, 4000);
 
     return () => clearInterval(interval);
   }, [unitImages.length]);
@@ -138,7 +113,6 @@ const UnitDetail = () => {
     }, 300);
   };
   
-  // Form state
   const [guestName, setGuestName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -200,106 +174,112 @@ const UnitDetail = () => {
       <Navbar />
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4">
-          {/* Breadcrumbs */}
-          <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-            <Link to="/" className="hover:text-primary transition-colors">
+          <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-4 overflow-x-auto whitespace-nowrap pb-1">
+            <Link to="/" className="hover:text-primary transition-colors flex-shrink-0">
               Home
             </Link>
-            <ChevronRight className="h-4 w-4" />
-            <Link to="/locations" className="hover:text-primary transition-colors">
+            <ChevronRight className="h-4 w-4 flex-shrink-0" />
+            <Link to="/locations" className="hover:text-primary transition-colors flex-shrink-0">
               Locations
             </Link>
             {location && (
               <>
-                <ChevronRight className="h-4 w-4" />
-                <Link 
+                <ChevronRight className="h-4 w-4 flex-shrink-0" />
+                <Link
                   to={`/locations/${location.slug || location.id}`}
-                  className="hover:text-primary transition-colors"
+                  className="hover:text-primary transition-colors max-w-[120px] sm:max-w-none truncate"
                 >
                   {location.name}
                 </Link>
               </>
             )}
-            <ChevronRight className="h-4 w-4" />
-            <span className="text-foreground font-medium">
+            <ChevronRight className="h-4 w-4 flex-shrink-0" />
+            <span className="text-foreground font-medium max-w-[120px] sm:max-w-none truncate">
               {unit.name || unit.unit_name || unit.type}
             </span>
           </nav>
 
-          {/* Back Button */}
           {location && (
-            <Link 
+            <Link
               to={`/locations/${location.slug || location.id}`}
               className="inline-flex items-center gap-2 text-foreground hover:text-primary transition-colors mb-6 text-base"
             >
               <ArrowLeft className="h-5 w-5" />
-              <span>Back to {location.name}</span>
+              <span className="max-w-[200px] sm:max-w-none truncate">Back to {location.name}</span>
             </Link>
           )}
           
-          {/* Image Slider */}
-          <div className="space-y-4 mb-8">
-            {/* Main Image */}
-            <div className="relative h-[400px] rounded-xl overflow-hidden group">
-              <div className="relative w-full h-full">
-                {unitImages.map((image, index) => (
-                  <img
-                    key={index}
-                    src={image}
-                    alt={`${unit.name || unit.unit_name || unit.type} view ${index + 1}`}
-                    className={cn(
-                      "absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-in-out",
-                      selectedImage === index
-                        ? "opacity-100 scale-100"
-                        : "opacity-0 scale-105"
-                    )}
-                  />
-                ))}
-              </div>
-              <Badge className="absolute top-4 left-4 bg-primary z-10">
-                {unit.type}
-              </Badge>
-              {!unit.available && (
-                <Badge className="absolute top-4 right-20 bg-destructive z-10">
-                  Rented
-                </Badge>
-              )}
-              
-              {/* Image counter */}
-              <div className="absolute bottom-4 right-4 bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full text-sm z-10">
-                {selectedImage + 1} / {unitImages.length}
-              </div>
-            </div>
-
-            {/* Thumbnails */}
-            <div className="grid grid-cols-7 gap-2">
-              {unitImages.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleImageSelect(index)}
-                  className={cn(
-                    "relative aspect-video rounded-lg overflow-hidden transition-all duration-300 hover-scale",
-                    selectedImage === index
-                      ? "ring-2 ring-primary scale-105 shadow-lg"
-                      : "opacity-70 hover:opacity-100"
-                  )}
-                >
-                  <img
-                    src={image}
-                    alt={`Thumbnail ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                  {selectedImage === index && (
-                    <div className="absolute inset-0 bg-primary/20" />
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
             <div className="lg:col-span-2 space-y-8">
+              <div className="space-y-4">
+                <div className="relative h-[400px] rounded-xl overflow-hidden group">
+                  <div className="relative w-full h-full">
+                    {unitImages.map((image, index) => (
+                      <img
+                        key={index}
+                        src={image}
+                        alt={`${unit.name || unit.unit_name || unit.type} view ${index + 1}`}
+                        className={cn(
+                          "absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-in-out cursor-pointer",
+                          selectedImage === index
+                            ? "opacity-100 scale-100"
+                            : "opacity-0 scale-105"
+                        )}
+                        onClick={() => handleImageSelect(index)}
+                      />
+                    ))}
+                  </div>
+                  <Badge className="absolute top-4 left-4 bg-primary z-10">
+                    {unit.type}
+                  </Badge>
+                  
+                  <div className="absolute bottom-4 right-4 bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full text-sm z-10">
+                    {selectedImage + 1} / {unitImages.length}
+                  </div>
+                  
+                  <button
+                    onClick={() => handleImageSelect((selectedImage - 1 + unitImages.length) % unitImages.length)}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => handleImageSelect((selectedImage + 1) % unitImages.length)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-7 gap-2">
+                  {unitImages.map((image, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleImageSelect(index)}
+                      className={cn(
+                        "relative aspect-video rounded-lg overflow-hidden transition-all duration-300 hover:scale-105",
+                        selectedImage === index
+                          ? "ring-2 ring-primary scale-105 shadow-lg"
+                          : "opacity-70 hover:opacity-100"
+                      )}
+                    >
+                      <img
+                        src={image}
+                        alt={`Thumbnail ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      {selectedImage === index && (
+                        <div className="absolute inset-0 bg-primary/20" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div>
                 <div className="flex items-center gap-2 mb-4">
                   <Badge className="bg-primary">{unit.type}</Badge>
@@ -337,14 +317,13 @@ const UnitDetail = () => {
 
               <div>
                 <h2 className="text-2xl font-semibold mb-4">Location</h2>
-                <LocationMap 
-                  locationName={location?.name || unit.building || "Location"} 
+                <LocationMap
+                  locationName={location?.name || unit.building || "Location"}
                   embedUrl={unit.map_embed_url}
                 />
               </div>
             </div>
 
-            {/* Booking Card */}
             <div className="lg:col-span-1">
               <Card className="sticky top-24">
                 <CardContent className="pt-6 space-y-6">
@@ -353,7 +332,6 @@ const UnitDetail = () => {
                   </div>
 
                   <div className="space-y-4">
-                    {/* Date Range Picker */}
                     <div className="space-y-2">
                       <Label>Check-in & Check-out Date</Label>
                       <Popover>
@@ -401,18 +379,18 @@ const UnitDetail = () => {
                     {unit.price_per_night ? (
                       <>
                         <div className="text-3xl font-bold text-primary mb-2">
-                          IDR {unit.price_per_night.toLocaleString()}
+                          $ {unit.price_per_night.toLocaleString()}
                           <span className="text-base font-normal text-muted-foreground">/night</span>
                         </div>
                         {unit.price_per_month && (
                           <p className="text-sm text-muted-foreground">
-                            Monthly: IDR {unit.price_per_month.toLocaleString()}
+                            Monthly: $ {unit.price_per_month.toLocaleString()}
                           </p>
                         )}
                       </>
                     ) : unit.price_per_month ? (
                       <div className="text-3xl font-bold text-primary mb-2">
-                        IDR {unit.price_per_month.toLocaleString()}
+                        $ {unit.price_per_month.toLocaleString()}
                         <span className="text-base font-normal text-muted-foreground">/month</span>
                       </div>
                     ) : (
@@ -422,8 +400,8 @@ const UnitDetail = () => {
                   </div>
 
                   <div className="space-y-3">
-                    <Button 
-                      className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" 
+                    <Button
+                      className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
                       size="lg"
                       onClick={() => setShowBookingForm(true)}
                     >
@@ -461,7 +439,6 @@ const UnitDetail = () => {
         </div>
       </main>
 
-      {/* Booking Form Dialog */}
       <Dialog open={showBookingForm} onOpenChange={setShowBookingForm}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -469,10 +446,12 @@ const UnitDetail = () => {
               <CalendarIcon className="h-5 w-5 text-primary" />
               Reservation Form
             </DialogTitle>
+            <DialogDescription>
+              Fill in your details to reserve this unit. The information will be sent to us via WhatsApp for confirmation.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6 py-4">
-            {/* Guest Information */}
             <div className="space-y-4">
               <h3 className="font-semibold flex items-center gap-2">
                 <span className="text-primary">👤</span>
@@ -526,7 +505,6 @@ const UnitDetail = () => {
               </div>
             </div>
 
-            {/* Booking Details */}
             <div className="space-y-4">
               <h3 className="font-semibold flex items-center gap-2">
                 <span className="text-primary">📅</span>
@@ -595,7 +573,6 @@ const UnitDetail = () => {
               </div>
             </div>
 
-            {/* Terms */}
             <div className="flex items-start gap-2">
               <input
                 type="checkbox"
@@ -609,7 +586,6 @@ const UnitDetail = () => {
               </Label>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-3 pt-4">
               <Button
                 variant="outline"

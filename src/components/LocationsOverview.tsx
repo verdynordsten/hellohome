@@ -1,42 +1,18 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin } from "lucide-react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-
-type Location = {
-  id: string;
-  name: string;
-  description: string | null;
-  slug: string | null;
-};
+import { useEffect, useRef } from "react";
+import { useLocationStore } from "@/stores";
 
 const LocationsOverview = () => {
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { locations, isLoading, fetchLocations } = useLocationStore();
+  const hasFetched = useRef(false);
 
   useEffect(() => {
-    fetchLocations();
-  }, []);
-
-  const fetchLocations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("locations")
-        .select("id, name, description, slug")
-        .order("name");
-
-      if (error) throw error;
-      setLocations(data || []);
-    } catch (error) {
-      console.error("Error fetching locations:", error);
-    } finally {
-      setLoading(false);
+    if (!hasFetched.current && locations.length === 0 && !isLoading) {
+      hasFetched.current = true;
+      fetchLocations();
     }
-  };
-
-  if (loading) {
+  }, [fetchLocations, locations.length, isLoading]);
+  
+  if (isLoading) {
     return (
       <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4 text-center">
@@ -61,25 +37,6 @@ const LocationsOverview = () => {
             Why choose apartment jakarta from HelloHome? We offer premium apartemen jakarta with hotel-grade standards, strategic city
             center locations, and competitive pricing. Every daily apartment jakarta is equipped with modern facilities and excellent service.
           </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
-          {locations.map((location) => (
-            <Card key={location.id} className="hover:shadow-card-hover transition-all duration-300">
-              <CardHeader>
-                <CardTitle className="flex items-start gap-2 text-lg">
-                  <MapPin className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                  <span>{location.name}</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">{location.description}</p>
-                <Button asChild className="w-full bg-primary hover:bg-primary/90">
-                  <Link to={`/locations/${location.slug || location.id}`}>View Available Units</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
         </div>
       </div>
     </section>
