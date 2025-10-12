@@ -12,16 +12,33 @@ import {
   sendCreatedResponse,
   sendNoContentResponse
 } from '../../utils/response';
+import multer from 'multer';
+import { uploadMultipleFilesToS3 } from '../../utils/storage';
 
 const router = Router();
+
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit per file
+  },
+  fileFilter: (req, file, cb) => {
+    // Accept only image files
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  },
+});
 
 router.get('/', async (_req, res: Response) => {
   try {
     const result = await db.select().from(locations).orderBy(desc(locations.createdAt));
     const mappedLocations = result.map(mapDrizzleLocation);
     sendSuccessResponse(res, 'Locations fetched successfully', mappedLocations);
-  } catch (error) {
-    console.error('Failed to fetch locations:', error);
+  } catch (_error) {
     sendErrorResponse(res, 'Failed to fetch locations');
   }
 });
@@ -35,8 +52,7 @@ router.get('/:id', async (req, res: Response) => {
     }
     const mappedLocation = mapDrizzleLocation(result[0]);
     sendSuccessResponse(res, 'Location fetched successfully', mappedLocation);
-  } catch (error) {
-    console.error('Failed to fetch location by ID:', error);
+  } catch (_error) {
     sendErrorResponse(res, 'Failed to fetch location');
   }
 });
@@ -50,8 +66,7 @@ router.get('/slug/:slug', async (req, res: Response) => {
     }
     const mappedLocation = mapDrizzleLocation(result[0]);
     sendSuccessResponse(res, 'Location fetched successfully', mappedLocation);
-  } catch (error) {
-    console.error('Failed to fetch location by slug:', error);
+  } catch (_error) {
     sendErrorResponse(res, 'Failed to fetch location');
   }
 });
@@ -77,8 +92,7 @@ router.post('/', authenticateToken, async (req, res: Response) => {
     
     const mappedLocation = mapDrizzleLocation(result[0]);
     sendCreatedResponse(res, 'Location created successfully', mappedLocation);
-  } catch (error) {
-    console.error('Failed to create location:', error);
+  } catch (_error) {
     sendErrorResponse(res, 'Failed to create location');
   }
 });
@@ -110,8 +124,7 @@ router.put('/:id', authenticateToken, async (req, res: Response) => {
     
     const mappedLocation = mapDrizzleLocation(result[0]);
     sendSuccessResponse(res, 'Location updated successfully', mappedLocation);
-  } catch (error) {
-    console.error('Failed to update location:', error);
+  } catch (_error) {
     sendErrorResponse(res, 'Failed to update location');
   }
 });
@@ -132,9 +145,39 @@ router.delete('/:id', authenticateToken, async (req, res: Response) => {
     }
     
     sendNoContentResponse(res, 'Location deleted successfully');
-  } catch (error) {
-    console.error('Failed to delete location:', error);
+  } catch (_error) {
     sendErrorResponse(res, 'Failed to delete location');
+  }
+});
+
+// Upload image only endpoint (for separate upload process)
+router.post('/upload-image', authenticateToken, upload.single('image'), async (req, res: Response) => {
+  try {
+    const file = req.file as Express.Multer.File;
+    
+    if (!file) {
+      return sendBadRequestResponse(res, 'No file provided');
+    }
+    
+    let uploadedImageUrl: string;
+    
+    // Handle file upload
+    try {
+      const fileData = {
+        buffer: file.buffer,
+        originalName: file.originalname,
+        contentType: file.mimetype,
+      };
+      
+      const uploadedUrls = await uploadMultipleFilesToS3([fileData]);
+      uploadedImageUrl = uploadedUrls[0];
+    } catch (_uploadError) {
+      return sendErrorResponse(res, 'Failed to upload image to storage');
+    }
+    
+    sendSuccessResponse(res, 'Image uploaded successfully', uploadedImageUrl);
+  } catch (_error) {
+    sendErrorResponse(res, 'Failed to upload image');
   }
 });
 

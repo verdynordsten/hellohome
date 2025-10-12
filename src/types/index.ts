@@ -156,8 +156,8 @@ export interface UnitState {
   fetchUnitsByLocationIdPaginated: (locationId: string, params?: { page?: number; limit?: number; search?: string; sortBy?: string; sortOrder?: 'asc' | 'desc' }) => Promise<{ units: Unit[]; total: number; page: number; limit: number; totalPages: number }>;
   fetchUnitById: (id: string) => Promise<Unit | null>;
   fetchUnitBySlug: (slug: string) => Promise<Unit | null>;
-  createUnit: (unit: CreateUnitInput) => Promise<Unit | null>;
-  updateUnit: (id: string, unit: UpdateUnitInput) => Promise<Unit | null>;
+  createUnit: (unit: CreateUnitInput | UnitFormData) => Promise<Unit | null>;
+  updateUnit: (id: string, unit: UpdateUnitInput | UnitFormData) => Promise<Unit | null>;
   deleteUnit: (id: string) => Promise<boolean>;
   setSelectedUnit: (unit: Unit | null) => void;
   setSearchQuery: (query: string) => void;

@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Edit, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { FileUpload } from "@/components/ui/file-upload";
+import { uploadFiles, UploadProgress } from "@/services/upload";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -72,6 +74,7 @@ export const AdminUnits = () => {
     description: "",
     features: "",
     imageFiles: [] as File[],
+    uploadedImageUrls: [] as string[],
     existingImages: [] as string[],
     imagesToDelete: [] as string[],
     price_per_month: "",
@@ -116,52 +119,28 @@ export const AdminUnits = () => {
       setUploadProgress(0);
 
       if (editingUnit) {
-        const formDataToSend = new FormData();
+        const unitData = {
+          location_id: formData.location_id,
+          name: formData.name || undefined,
+          slug: formData.slug || undefined,
+          type: formData.type,
+          unit_name: formData.unit_name || undefined,
+          floor: formData.floor || undefined,
+          building: formData.building || undefined,
+          tower: formData.tower || undefined,
+          view: formData.view || undefined,
+          description: formData.description || undefined,
+          features: featuresArray.length > 0 ? featuresArray : undefined,
+          // Combine existing images with newly uploaded images
+          images: [...formData.existingImages, ...formData.uploadedImageUrls],
+          images_to_delete: formData.imagesToDelete.length > 0 ? formData.imagesToDelete : undefined,
+          price_per_month: formData.price_per_month ? parseFloat(formData.price_per_month) : undefined,
+          price_per_night: formData.price_per_night ? parseFloat(formData.price_per_night) : undefined,
+          map_embed_url: formData.map_embed_url || undefined,
+          available: formData.available,
+        };
         
-        // Add all form fields
-        formDataToSend.append('location_id', formData.location_id);
-        if (formData.name) formDataToSend.append('name', formData.name);
-        if (formData.slug) formDataToSend.append('slug', formData.slug);
-        formDataToSend.append('type', formData.type);
-        if (formData.unit_name) formDataToSend.append('unit_name', formData.unit_name);
-        if (formData.floor) formDataToSend.append('floor', formData.floor);
-        if (formData.building) formDataToSend.append('building', formData.building);
-        if (formData.tower) formDataToSend.append('tower', formData.tower);
-        if (formData.view) formDataToSend.append('view', formData.view);
-        if (formData.description) formDataToSend.append('description', formData.description);
-        if (featuresArray.length > 0) formDataToSend.append('features', JSON.stringify(featuresArray));
-        // Always send existing images for updates
-        formDataToSend.append('existing_images', JSON.stringify(formData.existingImages));
-        if (formData.imagesToDelete.length > 0) formDataToSend.append('images_to_delete', JSON.stringify(formData.imagesToDelete));
-        if (formData.price_per_month) formDataToSend.append('price_per_month', formData.price_per_month);
-        if (formData.price_per_night) formDataToSend.append('price_per_night', formData.price_per_night);
-        if (formData.map_embed_url) formDataToSend.append('map_embed_url', formData.map_embed_url);
-        // Ensure boolean is sent correctly
-        formDataToSend.append('available', formData.available ? 'true' : 'false');
-        
-        // Add image files
-        formData.imageFiles.forEach((file) => {
-          formDataToSend.append('images', file);
-        });
-        
-        // Simulate upload progress
-        if (formData.imageFiles.length > 0) {
-          const progressInterval = setInterval(() => {
-            setUploadProgress(prev => {
-              if (prev >= 90) {
-                clearInterval(progressInterval);
-                return 90;
-              }
-              return prev + 10;
-            });
-          }, 200);
-        }
-        
-        const result = await updateUnit(editingUnit.id, formDataToSend as FormData);
-        
-        // Set progress to 100% and status to success
-        setUploadProgress(100);
-        setUploadStatus('success');
+        const result = await updateUnit(editingUnit.id, unitData);
         
         if (result) {
           toast({
@@ -172,49 +151,27 @@ export const AdminUnits = () => {
           throw new Error("Failed to update unit");
         }
       } else {
-        const formDataToSend = new FormData();
+        const unitData = {
+          location_id: formData.location_id,
+          name: formData.name || undefined,
+          slug: formData.slug || undefined,
+          type: formData.type,
+          unit_name: formData.unit_name || undefined,
+          floor: formData.floor || undefined,
+          building: formData.building || undefined,
+          tower: formData.tower || undefined,
+          view: formData.view || undefined,
+          description: formData.description || undefined,
+          features: featuresArray.length > 0 ? featuresArray : undefined,
+          // Use the uploaded image URLs
+          images: formData.uploadedImageUrls,
+          price_per_month: formData.price_per_month ? parseFloat(formData.price_per_month) : undefined,
+          price_per_night: formData.price_per_night ? parseFloat(formData.price_per_night) : undefined,
+          map_embed_url: formData.map_embed_url || undefined,
+          available: formData.available,
+        };
         
-        // Add all form fields
-        formDataToSend.append('location_id', formData.location_id);
-        if (formData.name) formDataToSend.append('name', formData.name);
-        if (formData.slug) formDataToSend.append('slug', formData.slug);
-        formDataToSend.append('type', formData.type);
-        if (formData.unit_name) formDataToSend.append('unit_name', formData.unit_name);
-        if (formData.floor) formDataToSend.append('floor', formData.floor);
-        if (formData.building) formDataToSend.append('building', formData.building);
-        if (formData.tower) formDataToSend.append('tower', formData.tower);
-        if (formData.view) formDataToSend.append('view', formData.view);
-        if (formData.description) formDataToSend.append('description', formData.description);
-        if (featuresArray.length > 0) formDataToSend.append('features', JSON.stringify(featuresArray));
-        if (formData.price_per_month) formDataToSend.append('price_per_month', formData.price_per_month);
-        if (formData.price_per_night) formDataToSend.append('price_per_night', formData.price_per_night);
-        if (formData.map_embed_url) formDataToSend.append('map_embed_url', formData.map_embed_url);
-        // Ensure boolean is sent correctly
-        formDataToSend.append('available', formData.available ? 'true' : 'false');
-        
-        // Add image files
-        formData.imageFiles.forEach((file) => {
-          formDataToSend.append('images', file);
-        });
-        
-        // Simulate upload progress
-        if (formData.imageFiles.length > 0) {
-          const progressInterval = setInterval(() => {
-            setUploadProgress(prev => {
-              if (prev >= 90) {
-                clearInterval(progressInterval);
-                return 90;
-              }
-              return prev + 10;
-            });
-          }, 200);
-        }
-        
-        const result = await createUnit(formDataToSend as FormData);
-        
-        // Set progress to 100% and status to success
-        setUploadProgress(100);
-        setUploadStatus('success');
+        const result = await createUnit(unitData);
         
         if (result) {
           toast({
@@ -247,6 +204,7 @@ export const AdminUnits = () => {
         description: "",
         features: "",
         imageFiles: [],
+        uploadedImageUrls: [],
         existingImages: [],
         imagesToDelete: [],
         price_per_month: "",
@@ -289,6 +247,7 @@ export const AdminUnits = () => {
       description: unit.description || "",
       features: unit.features?.join(", ") || "",
       imageFiles: [],
+      uploadedImageUrls: [],
       existingImages: unit.images || [],
       imagesToDelete: [],
       price_per_month: unit.price_per_month?.toString() || "",
@@ -334,6 +293,7 @@ export const AdminUnits = () => {
       description: "",
       features: "",
       imageFiles: [],
+      uploadedImageUrls: [],
       existingImages: [],
       imagesToDelete: [],
       price_per_month: "",
@@ -596,55 +556,6 @@ export const AdminUnits = () => {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="images">Images</Label>
-                <Input
-                  id="images"
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  disabled={isUploading}
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files || []);
-                    setFormData({ ...formData, imageFiles: files });
-                  }}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Upload multiple images (JPG, PNG, etc.)
-                </p>
-                
-                {isUploading && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span>Uploading images...</span>
-                      <span>{uploadProgress}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div
-                        className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out"
-                        style={{ width: `${uploadProgress}%` }}
-                      ></div>
-                    </div>
-                    {uploadStatus === 'success' && (
-                      <div className="flex items-center text-green-600 text-sm">
-                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                        Upload completed successfully!
-                      </div>
-                    )}
-                    {uploadStatus === 'error' && (
-                      <div className="flex items-center text-red-600 text-sm">
-                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                        </svg>
-                        Upload failed. Please try again.
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
               {editingUnit && formData.existingImages.length > 0 && (
                 <div className="space-y-2">
                   <Label>Existing Images</Label>
@@ -676,6 +587,90 @@ export const AdminUnits = () => {
                   </div>
                 </div>
               )}
+
+              <div className="space-y-2">
+                <FileUpload
+                  accept="image/*"
+                  multiple={true}
+                  maxFiles={10}
+                  onFilesSelected={(files) => setFormData({ ...formData, imageFiles: files })}
+                  onUpload={async (files) => {
+                    const formDataToSend = new FormData();
+                    files.forEach((file) => {
+                      formDataToSend.append('images', file);
+                    });
+                    
+                    try {
+                      setUploadStatus('uploading');
+                      const response = await uploadFiles('/units/upload-only', formDataToSend, {
+                        onProgress: (progress: UploadProgress) => {
+                          setUploadProgress(progress.percentage);
+                        }
+                      });
+                      
+                      // Assuming the response contains an array of URLs
+                      const urls = Array.isArray(response) ? response : [response];
+                      
+                      // Update form data with uploaded URLs
+                      setFormData(prev => ({
+                        ...prev,
+                        uploadedImageUrls: [...prev.uploadedImageUrls, ...urls]
+                      }));
+                      
+                      setTimeout(() => {
+                        setUploadStatus('idle');
+                        setUploadProgress(0);
+                      }, 2000);
+                      
+                      return urls;
+                    } catch (error) {
+                      setUploadStatus('error');
+                      setTimeout(() => {
+                        setUploadStatus('idle');
+                        setUploadProgress(0);
+                      }, 3000);
+                      throw new Error((error as Error).message);
+                    }
+                  }}
+                  disabled={isUploading}
+                  showProgress={isUploading}
+                  progress={uploadProgress}
+                  uploadStatus={uploadStatus}
+                  label="Images"
+                  description="Upload multiple images (JPG, PNG, etc.)"
+                  showUploadButton={true}
+                />
+                
+                {formData.uploadedImageUrls.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">Uploaded Images:</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {formData.uploadedImageUrls.map((url, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={url}
+                            alt={`Uploaded image ${index + 1}`}
+                            className="w-full h-24 object-cover rounded border"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newUploadedUrls = formData.uploadedImageUrls.filter((_, i) => i !== index);
+                              setFormData({
+                                ...formData,
+                                uploadedImageUrls: newUploadedUrls
+                              });
+                            }}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <div className="flex items-center space-x-2">
                 <Checkbox

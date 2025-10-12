@@ -285,8 +285,7 @@ router.post('/', authenticateToken, upload.array('images', 10), async (req, res:
         }));
         
         uploadedImageUrls = await uploadMultipleFilesToS3(fileData);
-      } catch (uploadError) {
-        console.error('Error uploading files:', uploadError);
+      } catch (_uploadError) {
         return sendErrorResponse(res, 'Failed to upload images to storage');
       }
     }
@@ -296,8 +295,8 @@ router.post('/', authenticateToken, upload.array('images', 10), async (req, res:
     if (unitData.existing_images) {
       try {
         existingImages = JSON.parse(unitData.existing_images);
-      } catch (parseError) {
-        console.error('Error parsing existing images:', parseError);
+      } catch (_parseError) {
+        // Ignore parsing errors
       }
     }
     
@@ -318,7 +317,21 @@ router.post('/', authenticateToken, upload.array('images', 10), async (req, res:
         (typeof unitData.available === 'string' ? unitData.available === 'true' : unitData.available) : true,
       imageUrl: null, // Always null as requested
       images: allImages.length > 0 ? allImages : null,
-      features: unitData.features ? JSON.parse(unitData.features) : null,
+      features: unitData.features ?
+        (() => {
+          // Check if features is already an array
+          if (Array.isArray(unitData.features)) {
+            return unitData.features;
+          } else if (typeof unitData.features === 'string') {
+            try {
+              return JSON.parse(unitData.features);
+            } catch (_e) {
+              // If parsing fails, treat it as a comma-separated string
+              return unitData.features.split(',').map((f: string) => f.trim());
+            }
+          }
+          return null;
+        })() : null,
       view: unitData.view || null,
       floor: unitData.floor || null,
       building: unitData.building || null,
@@ -342,7 +355,94 @@ router.post('/', authenticateToken, upload.array('images', 10), async (req, res:
   }
 });
 
-router.put('/:id', authenticateToken, upload.array('images', 10), async (req, res: Response) => {
+// Create a separate endpoint for updating unit data without file upload
+router.put('/:id', authenticateToken, async (req, res: Response) => {
+  try {
+    const { id } = req.params;
+    const unitData = req.body;
+    const existingUnit = await db.select().from(units).where(eq(units.id, id)).limit(1);
+    if (existingUnit.length === 0) {
+      return sendNotFoundResponse(res, 'Unit not found');
+    }
+    
+    // Handle image deletions if specified
+    let imagesToDelete: string[] = [];
+    if (unitData.images_to_delete) {
+      try {
+        imagesToDelete = JSON.parse(unitData.images_to_delete);
+        await deleteMultipleFilesFromS3(imagesToDelete);
+      } catch (_deleteError) {
+        // Ignore deletion errors
+      }
+    }
+    
+    // Parse features if provided
+    let parsedFeatures = existingUnit[0].features;
+    if (unitData.features) {
+      // Check if features is already an array
+      if (Array.isArray(unitData.features)) {
+        parsedFeatures = unitData.features;
+      } else if (typeof unitData.features === 'string') {
+        try {
+          parsedFeatures = JSON.parse(unitData.features);
+        } catch (_parseError) {
+          // If parsing fails, treat it as a comma-separated string
+          parsedFeatures = unitData.features.split(',').map((f: string) => f.trim());
+        }
+      }
+    }
+    
+    // Create update object with only the fields that are provided
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: any = {
+      updatedAt: new Date(),
+    };
+    
+    // Only include fields that are explicitly provided and not empty in the request
+    if (unitData.location_id !== undefined && unitData.location_id !== "") updateData.locationId = unitData.location_id;
+    if (unitData.type !== undefined && unitData.type !== "") updateData.type = unitData.type;
+    if (unitData.name !== undefined && unitData.name !== "") updateData.name = unitData.name;
+    if (unitData.unit_name !== undefined && unitData.unit_name !== "") updateData.unitName = unitData.unit_name;
+    if (unitData.slug !== undefined && unitData.slug !== "") updateData.slug = unitData.slug;
+    if (unitData.description !== undefined && unitData.description !== "") updateData.description = unitData.description;
+    if (unitData.price_per_month !== undefined && unitData.price_per_month !== "") updateData.pricePerMonth = unitData.price_per_month.toString();
+    if (unitData.price_per_night !== undefined && unitData.price_per_night !== "") updateData.pricePerNight = unitData.price_per_night.toString();
+    // Handle boolean field specifically
+    if (unitData.available !== undefined) {
+      // Convert string to boolean if needed
+      let availableValue = unitData.available;
+      if (typeof availableValue === 'string') {
+        availableValue = availableValue === 'true';
+      }
+      updateData.available = availableValue;
+    }
+    if (unitData.view !== undefined && unitData.view !== "") updateData.view = unitData.view;
+    if (unitData.floor !== undefined && unitData.floor !== "") updateData.floor = unitData.floor;
+    if (unitData.building !== undefined && unitData.building !== "") updateData.building = unitData.building;
+    if (unitData.tower !== undefined && unitData.tower !== "") updateData.tower = unitData.tower;
+    if (unitData.map_embed_url !== undefined && unitData.map_embed_url !== "") updateData.mapEmbedUrl = unitData.map_embed_url;
+    if (unitData.features !== undefined) updateData.features = parsedFeatures;
+    if (unitData.images !== undefined) updateData.images = unitData.images;
+    
+    const result = await db.update(units)
+      .set(updateData)
+      .where(eq(units.id, id))
+      .returning();
+    
+    if (result.length === 0) {
+      return sendErrorResponse(res, 'Failed to update unit');
+    }
+    
+    const mappedUnit = mapDrizzleUnit(result[0]);
+    sendSuccessResponse(res, 'Unit updated successfully', mappedUnit);
+  } catch (error) {
+    console.error('Failed to update unit:', error);
+    sendErrorResponse(res, 'Failed to update unit');
+  }
+});
+
+// Create a separate endpoint for updating unit with file upload
+router.put('/:id/with-images', authenticateToken, upload.array('images', 10), async (req, res: Response) => {
   try {
     const { id } = req.params;
     const unitData = req.body;
@@ -366,8 +466,7 @@ router.put('/:id', authenticateToken, upload.array('images', 10), async (req, re
         }));
         
         uploadedImageUrls = await uploadMultipleFilesToS3(fileData);
-      } catch (uploadError) {
-        console.error('Error uploading files:', uploadError);
+      } catch (_uploadError) {
         return sendErrorResponse(res, 'Failed to upload images to storage');
       }
     }
@@ -377,8 +476,8 @@ router.put('/:id', authenticateToken, upload.array('images', 10), async (req, re
       try {
         imagesToDelete = JSON.parse(unitData.images_to_delete);
         await deleteMultipleFilesFromS3(imagesToDelete);
-      } catch (deleteError) {
-        console.error('Error deleting images:', deleteError);
+      } catch (_deleteError) {
+        // Ignore deletion errors
       }
     }
     
@@ -387,8 +486,7 @@ router.put('/:id', authenticateToken, upload.array('images', 10), async (req, re
     if (unitData.existing_images) {
       try {
         existingImages = JSON.parse(unitData.existing_images);
-      } catch (parseError) {
-        console.error('Error parsing existing images:', parseError);
+      } catch (_parseError) {
         // If parsing fails, use the current unit's images
         existingImages = existingUnit[0].images || [];
       }
@@ -406,10 +504,16 @@ router.put('/:id', authenticateToken, upload.array('images', 10), async (req, re
     // Parse features if provided
     let parsedFeatures = existingUnit[0].features;
     if (unitData.features) {
-      try {
-        parsedFeatures = JSON.parse(unitData.features);
-      } catch (parseError) {
-        console.error('Error parsing features:', parseError);
+      // Check if features is already an array
+      if (Array.isArray(unitData.features)) {
+        parsedFeatures = unitData.features;
+      } else if (typeof unitData.features === 'string') {
+        try {
+          parsedFeatures = JSON.parse(unitData.features);
+        } catch (_parseError) {
+          // If parsing fails, treat it as a comma-separated string
+          parsedFeatures = unitData.features.split(',').map((f: string) => f.trim());
+        }
       }
     }
     
@@ -488,6 +592,37 @@ router.delete('/:id', authenticateToken, async (req, res: Response) => {
   } catch (error) {
     console.error('Failed to delete unit:', error);
     sendErrorResponse(res, 'Failed to delete unit');
+  }
+});
+
+// Upload images only endpoint (for separate upload process)
+router.post('/upload-only', authenticateToken, upload.array('images', 10), async (req, res: Response) => {
+  try {
+    const files = req.files as Express.Multer.File[];
+    
+    if (!files || files.length === 0) {
+      return sendBadRequestResponse(res, 'No files provided');
+    }
+    
+    let uploadedImageUrls: string[] = [];
+    
+    // Handle file uploads
+    try {
+      const fileData = files.map((file: Express.Multer.File) => ({
+        buffer: file.buffer,
+        originalName: file.originalname,
+        contentType: file.mimetype,
+      }));
+      
+      uploadedImageUrls = await uploadMultipleFilesToS3(fileData);
+    } catch (_uploadError) {
+      return sendErrorResponse(res, 'Failed to upload images to storage');
+    }
+    
+    sendSuccessResponse(res, 'Images uploaded successfully', uploadedImageUrls);
+  } catch (error) {
+    console.error('Failed to upload images:', error);
+    sendErrorResponse(res, 'Failed to upload images');
   }
 });
 

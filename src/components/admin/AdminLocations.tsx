@@ -10,6 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Edit } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { FileUpload } from "@/components/ui/file-upload";
+import { uploadFiles, UploadProgress } from "@/services/upload";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,11 +28,17 @@ export const AdminLocations = () => {
   const { locations, isLoading, fetchLocations, createLocation, updateLocation, deleteLocation } = useLocationStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [formData, setFormData] = useState({
     name: "",
-    description: "",
-    image_url: "",
     slug: "",
+    description: "",
+    existingImages: [] as string[],
+    imageFile: null as File | null,
+    uploadedImageUrl: "",
+    imagesToDelete: [] as string[],
   });
   const { toast } = useToast();
   const hasFetched = useRef(false);
@@ -46,11 +54,21 @@ export const AdminLocations = () => {
     e.preventDefault();
 
     try {
+      setIsUploading(true);
+      setUploadStatus('uploading');
+      setUploadProgress(0);
+
       if (editingLocation) {
+        // Combine existing images with newly uploaded image
+        const allImages = [...formData.existingImages];
+        if (formData.uploadedImageUrl) {
+          allImages.push(formData.uploadedImageUrl);
+        }
+        
         const updateData: UpdateLocationInput = {
           name: formData.name,
           description: formData.description || undefined,
-          image_url: formData.image_url || undefined,
+          image_url: allImages.length > 0 ? allImages[0] : undefined,
           slug: formData.slug || undefined,
         };
         
@@ -64,11 +82,17 @@ export const AdminLocations = () => {
         } else {
           throw new Error("Failed to update location");
         }
+        
+        // Set progress to 100% and status to success
+        setUploadProgress(100);
+        setUploadStatus('success');
       } else {
+        // Use the uploaded image URL if available
+        const imageUrl = formData.uploadedImageUrl;
         const createData: CreateLocationInput = {
           name: formData.name,
           description: formData.description || undefined,
-          image_url: formData.image_url || undefined,
+          image_url: imageUrl || undefined,
           slug: formData.slug || undefined,
         };
         
@@ -82,17 +106,46 @@ export const AdminLocations = () => {
         } else {
           throw new Error("Failed to create location");
         }
+        
+        // Set progress to 100% and status to success
+        setUploadProgress(100);
+        setUploadStatus('success');
       }
 
+      // Reset upload state after a short delay to show success status
+      setTimeout(() => {
+        setIsUploading(false);
+        setUploadStatus('idle');
+        setUploadProgress(0);
+      }, 1500);
+
       setDialogOpen(false);
-      setFormData({ name: "", description: "", image_url: "", slug: "" });
+      setFormData({
+        name: "",
+        slug: "",
+        description: "",
+        existingImages: [],
+        imageFile: null,
+        uploadedImageUrl: "",
+        imagesToDelete: []
+      });
       setEditingLocation(null);
     } catch (error: unknown) {
+      // Set upload status to error
+      setUploadStatus('error');
+      setIsUploading(false);
+      
       toast({
         title: "Error",
         description: (error as Error).message,
         variant: "destructive",
       });
+      
+      // Reset upload state after error
+      setTimeout(() => {
+        setUploadStatus('idle');
+        setUploadProgress(0);
+      }, 3000);
     }
   };
 
@@ -100,9 +153,12 @@ export const AdminLocations = () => {
     setEditingLocation(location);
     setFormData({
       name: location.name,
-      description: location.description || "",
-      image_url: location.image_url || "",
       slug: location.slug || "",
+      description: location.description || "",
+      existingImages: location.image_url ? [location.image_url] : [],
+      imageFile: null,
+      uploadedImageUrl: "",
+      imagesToDelete: [],
     });
     setDialogOpen(true);
   };
@@ -129,7 +185,15 @@ export const AdminLocations = () => {
   };
 
   const resetForm = () => {
-    setFormData({ name: "", description: "", image_url: "", slug: "" });
+    setFormData({
+      name: "",
+      slug: "",
+      description: "",
+      existingImages: [],
+      imageFile: null,
+      uploadedImageUrl: "",
+      imagesToDelete: []
+    });
     setEditingLocation(null);
   };
 
@@ -174,25 +238,6 @@ export const AdminLocations = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="image_url">Image URL</Label>
-                <Input
-                  id="image_url"
-                  type="url"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="slug">Slug (URL-friendly name)</Label>
                 <Input
                   id="slug"
@@ -202,8 +247,127 @@ export const AdminLocations = () => {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full">
-                {editingLocation ? "Update Location" : "Create Location"}
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                />
+              </div>
+              
+              {editingLocation && formData.existingImages.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Existing Image</Label>
+                  <div className="relative group">
+                    <img
+                      src={formData.existingImages[0]}
+                      alt="Existing location image"
+                      className="w-full h-32 object-cover rounded border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newImagesToDelete = [...formData.imagesToDelete, formData.existingImages[0]];
+                        const newExistingImages = formData.existingImages.filter(img => img !== formData.existingImages[0]);
+                        setFormData({
+                          ...formData,
+                          imagesToDelete: newImagesToDelete,
+                          existingImages: newExistingImages
+                        });
+                      }}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              <FileUpload
+                accept="image/*"
+                multiple={false}
+                maxFiles={1}
+                onFilesSelected={(files) => setFormData({ ...formData, imageFile: files[0] || null })}
+                onUpload={async (files) => {
+                  const formDataToSend = new FormData();
+                  formDataToSend.append('image', files[0]);
+                  
+                  try {
+                    setUploadStatus('uploading');
+                    const response = await uploadFiles('/locations/upload-image', formDataToSend, {
+                      onProgress: (progress: UploadProgress) => {
+                        setUploadProgress(progress.percentage);
+                      }
+                    });
+                    
+                    // Update form data with uploaded URL
+                    const url = Array.isArray(response) ? response[0] : response;
+                    setFormData(prev => ({
+                      ...prev,
+                      uploadedImageUrl: url
+                    }));
+                    
+                    setTimeout(() => {
+                      setUploadStatus('idle');
+                      setUploadProgress(0);
+                    }, 2000);
+                    
+                    return [url];
+                  } catch (error) {
+                    setUploadStatus('error');
+                    setTimeout(() => {
+                      setUploadStatus('idle');
+                      setUploadProgress(0);
+                    }, 3000);
+                    throw new Error((error as Error).message);
+                  }
+                }}
+                disabled={isUploading}
+                showProgress={isUploading}
+                progress={uploadProgress}
+                uploadStatus={uploadStatus}
+                label="Upload Image"
+                description="Upload an image for the location"
+                showUploadButton={true}
+              />
+              
+              {formData.uploadedImageUrl && (
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Uploaded Image:</div>
+                  <div className="relative group">
+                    <img
+                      src={formData.uploadedImageUrl}
+                      alt="Uploaded location image"
+                      className="w-full h-32 object-cover rounded border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData({
+                          ...formData,
+                          uploadedImageUrl: ""
+                        });
+                      }}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+              )}
+              <Button type="submit" className="w-full" disabled={isUploading}>
+                {isUploading ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
+                    {editingLocation ? "Updating..." : "Creating..."}
+                  </>
+                ) : (
+                  <>
+                    {editingLocation ? "Update Location" : "Create Location"}
+                  </>
+                )}
               </Button>
             </form>
           </DialogContent>
@@ -219,6 +383,7 @@ export const AdminLocations = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Image</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead>Units</TableHead>
@@ -228,6 +393,19 @@ export const AdminLocations = () => {
             <TableBody>
               {locations.map((location) => (
                 <TableRow key={location.id}>
+                  <TableCell>
+                    {location.image_url ? (
+                      <img
+                        src={location.image_url}
+                        alt={location.name}
+                        className="w-16 h-16 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 bg-muted rounded flex items-center justify-center text-muted-foreground text-xs">
+                        No image
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell className="font-medium">{location.name}</TableCell>
                   <TableCell className="max-w-md truncate">
                     {location.description || "No description"}
@@ -283,7 +461,7 @@ export const AdminLocations = () => {
               ))}
               {locations.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center text-muted-foreground">
                     No locations found
                   </TableCell>
                 </TableRow>
