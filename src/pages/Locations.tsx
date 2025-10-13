@@ -41,7 +41,7 @@ const Locations = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {sortedLocations.map((location) => (
-              <Link key={location.id} to={`/locations/${location.slug || location.id}`}>
+              <Link key={location.id} to={`/${location.slug || location.id}`}>
                 <Card className="overflow-hidden hover:shadow-card-hover transition-all group cursor-pointer">
                   <div className="relative overflow-hidden h-64">
                     <img

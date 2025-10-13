@@ -342,7 +342,7 @@ const LocationUnits = () => {
 
                 <CardFooter className="pt-0">
                   <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground shadow-md hover:shadow-lg transition-all duration-300">
-                    <Link to={`/location/${location.slug || location.id}/${unit.slug || unit.id}`}>View Details</Link>
+                    <Link to={`/${location.slug || location.id}/${unit.slug || unit.id}`}>View Details</Link>
                   </Button>
                 </CardFooter>
               </Card>
