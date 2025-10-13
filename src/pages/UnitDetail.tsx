@@ -186,7 +186,7 @@ const UnitDetail = () => {
               <>
                 <ChevronRight className="h-4 w-4 flex-shrink-0" />
                 <Link
-                  to={`/locations/${location.slug || location.id}`}
+                  to={`/${location.slug || location.id}`}
                   className="hover:text-primary transition-colors max-w-[120px] sm:max-w-none truncate"
                 >
                   {location.name}
@@ -201,7 +201,7 @@ const UnitDetail = () => {
 
           {location && (
             <Link
-              to={`/locations/${location.slug || location.id}`}
+              to={`/${location.slug || location.id}`}
               className="inline-flex items-center gap-2 text-foreground hover:text-primary transition-colors mb-6 text-base"
             >
               <ArrowLeft className="h-5 w-5" />
