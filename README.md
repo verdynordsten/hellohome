@@ -1,8 +1,8 @@
-# Hello Home - Premium Apartment Rentals in Batam
+# Hello Home - Premium Apartment Rentals in Jakarta
 
 ## Project info
 
-Hello Home is a premium apartment rental platform in Batam, offering fully furnished units with stunning views, modern amenities, and strategic locations.
+Hello Home is a premium apartment rental platform in Jakarta, offering fully furnished units with stunning views, modern amenities, and strategic locations.
 
 ## How can I edit this code?
 
